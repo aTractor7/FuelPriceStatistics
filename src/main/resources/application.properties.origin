@@ -1,0 +1,7 @@
+bot.name =
+bot.token =
+
+fuel.inf.url = https://index.minfin.com.ua/markets/fuel/%s/
+fuel.file.pass = src/main/resources/file/FuelStatistics.docx
+
+date.format = dd.MM.yyyy
