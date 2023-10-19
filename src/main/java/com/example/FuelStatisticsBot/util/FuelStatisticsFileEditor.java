@@ -3,6 +3,7 @@ package com.example.FuelStatisticsBot.util;
 import com.example.FuelStatisticsBot.model.Fuel;
 import com.example.FuelStatisticsBot.model.FuelType;
 import org.apache.poi.xwpf.usermodel.*;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -48,15 +49,12 @@ public class FuelStatisticsFileEditor {
         try(FileOutputStream output = new FileOutputStream(fuelFile)) {
             XWPFDocument document = new XWPFDocument();
 
-            int rows = fuelDateMap.keySet().size() + 1;
-            int cols = requiredFuel.size() + 1;
-            createDatePriceTable(fuelDateMap, requiredFuel, document.createTable(rows, cols));
+            createDocumentStructure(document, fuelDateMap, requiredFuel);
 
+            List<XWPFTable> tables = document.getTables();
 
-
-            rows = requiredFuel.size() + 1;
-            cols = 2;
-            createPriceGrowTable(percentsList, fuelDateMap.keySet(), requiredFuel, document.createTable(rows, cols));
+            createDatePriceTable(fuelDateMap, requiredFuel, tables.get(0));
+            createPriceGrowTable(percentsList, fuelDateMap.keySet(), requiredFuel, tables.get(1));
 
             document.write(output);
             document.close();
@@ -66,6 +64,17 @@ public class FuelStatisticsFileEditor {
         return fuelFile;
     }
 
+
+    private void createDocumentStructure(XWPFDocument document, Map<LocalDate, List<Fuel>> fuelDateMap,
+                                                    List<FuelType> requiredFuel) {
+        document.createTable(
+                fuelDateMap.keySet().size() + 1,
+                requiredFuel.size() + 1);
+
+        addNewLine(document);
+
+        document.createTable(requiredFuel.size() + 1, 2);
+    }
 
     private void createDatePriceTable(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
                                       XWPFTable table) {
@@ -118,6 +127,8 @@ public class FuelStatisticsFileEditor {
         cells.get(1).setText("Відсоток збільшення роздрібних цін в період ");
     }
 
+
+
     private String parseStatistics(List<Double> percents, Set<LocalDate> dateSet) {
         StringBuilder builder = new StringBuilder();
 
@@ -133,8 +144,7 @@ public class FuelStatisticsFileEditor {
                     .append(lastElement.format(formatter))
                     .append("р.                     ")
                     .append(percentsIterator.next())
-                    .append("%\n");
-
+                    .append("%             ");
         }
         return builder.toString();
     }
@@ -158,4 +168,11 @@ public class FuelStatisticsFileEditor {
         builder.insert(2, ",");
         return builder.toString();
     }
+
+    private void addNewLine(XWPFDocument document) {
+        var paragraph = document.createParagraph();
+        var run = paragraph.createRun();
+        run.addBreak();
+    }
+
 }
