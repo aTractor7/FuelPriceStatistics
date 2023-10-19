@@ -25,7 +25,7 @@ public class FuelStatisticsService {
     }
 
 
-    public void fillStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) {
+    public File fillStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) {
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(start, end);
 
         trimDate(start, end, fuelDateMap);
@@ -38,7 +38,7 @@ public class FuelStatisticsService {
 
 
         try {
-            fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
+            return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
