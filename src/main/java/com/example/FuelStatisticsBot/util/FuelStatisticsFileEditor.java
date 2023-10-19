@@ -25,13 +25,6 @@ import java.util.Set;
 @PropertySource("application.properties")
 public class FuelStatisticsFileEditor {
 
-    private static final String A95_PLUS_TEXT = "Бензин А-95 (покращенної якості) грн./л";
-    private static final String A95_TEXT = "Бензин А-95 грн./л";
-    private static final String A92_TEXT = "Бензин А-92 грн./л";
-    private static final String DT_TEXT = "Дизельне паливо грн./л";
-    private static final String DT_PLUS_TEXT = "Дизельне паливо (покращенної якості) грн./л";
-    private static final String GAS_TEXT = "Газ, грн./л";
-
     @Value("${fuel.file.pass}")
     private String filePass;
 
@@ -151,13 +144,14 @@ public class FuelStatisticsFileEditor {
 
     private String parseFuelType(FuelType fuelType) {
         String result;
+
         switch (fuelType) {
-            case A95_PLUS -> result = A95_PLUS_TEXT;
-            case A95 -> result = A95_TEXT;
-            case A92 -> result =  A92_TEXT;
-            case DT_PLUS -> result = DT_PLUS_TEXT;
-            case DT -> result = DT_TEXT;
-            case GAS -> result = GAS_TEXT;
+            case A95_PLUS -> result = "Бензин А-95 (покращенної якості) грн./л";
+            case A95 -> result = "Бензин А-95 грн./л";
+            case A92 -> result = "Бензин А-92 грн./л";
+            case DT_PLUS -> result = "Дизельне паливо (покращенної якості) грн./л";
+            case DT -> result = "Дизельне паливо грн./л";
+            case GAS -> result = "Газ, грн./л";
             default -> throw new RuntimeException("No such fuel type");
         }
         return result;
