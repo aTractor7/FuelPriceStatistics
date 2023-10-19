@@ -137,7 +137,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
 
             sendMessage(chatId, "Іде збір та форматуваня інформації...");
 
-            fuelStatisticsService.test(start, end,
+            fuelStatisticsService.fillStatisticsInDocsFile(start, end,
                     List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
 
             File fuelFile = new File(filePass);

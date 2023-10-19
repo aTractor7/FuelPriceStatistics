@@ -25,10 +25,10 @@ public class FuelStatisticsService {
     }
 
 
-    public void test(LocalDate start, LocalDate end, List<FuelType> requiredFuel) {
+    public void fillStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) {
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(start, end);
 
-        fuelDateMap.entrySet().removeIf(e -> start.isAfter(e.getKey())||end.isBefore(e.getKey()));
+        trimDate(start, end, fuelDateMap);
 
         List<List<Double>> fuelsPercents = new ArrayList<>();
 
@@ -43,13 +43,6 @@ public class FuelStatisticsService {
             throw new RuntimeException(e);
         }
     }
-
-    /*************************************************************
-     *Перенести в валідатор
-
-        if(fuelDateMap.isEmpty()) throw new ServiceException("No data. FuelMap is empty");
-
-    */
 
     private List<Double> getGrowthStatisticsInPercent(Map<LocalDate, List<Fuel>> fuelDateMap, FuelType fuelType) {
         List<Fuel> fuelList = fuelDateMap.keySet().stream()
@@ -68,10 +61,7 @@ public class FuelStatisticsService {
         return result;
     }
 
-    private void trimDate(LocalDate start, LocalDate end, Map<LocalDate, List<Fuel>> dateMap) {
-
-
-
-
+    private void trimDate(LocalDate start, LocalDate end, Map<LocalDate, List<Fuel>> fuelDateMap) {
+        fuelDateMap.entrySet().removeIf(e -> start.isAfter(e.getKey())||end.isBefore(e.getKey()));
     }
 }
