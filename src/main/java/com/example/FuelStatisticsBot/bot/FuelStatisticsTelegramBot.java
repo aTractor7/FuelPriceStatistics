@@ -10,16 +10,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScope;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -27,13 +32,15 @@ import java.util.List;
 @PropertySource("application.properties")
 public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
 
-    private static final Logger LOG = LoggerFactory.getLogger(FuelStatisticsTelegramBot.class);
+    private final Logger LOG = LoggerFactory.getLogger(FuelStatisticsTelegramBot.class);
 
-    public static final String START = "/start";
-    public static final String FUEL_STATISTICS = "/get_statistics";
-    public static final String HELP = "/help";
+    private static final String START = "/start";
+    private static final String FUEL_STATISTICS = "/get_statistics";
+    private static final String HELP = "/help";
 
-    public static final String HELP_MESSAGE = """
+    private final List<BotCommand> commandList;
+
+    private static final String HELP_MESSAGE = """
             Для отримання файлу з статистикою використовуйте команду:
             /get_statistics
             Після неї потрібно ввести дві дати через пробіл.
@@ -43,11 +50,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
             /help
             """;
 
-    public static final String REG_DATE_VALIDATOR = "\\d{2}\\.\\d{2}\\.\\d{4}\\s\\d{2}\\.\\d{2}\\.\\d{4}";
-
     private final String botUsername;
-    @Value("${fuel.file.pass}")
-    private String filePass;
 
     private final FuelStatisticsService fuelStatisticsService;
     private final DateValidator dateValidator;
@@ -56,13 +59,31 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
     @Autowired
     public FuelStatisticsTelegramBot(@Value("${bot.token}") String token,
                                      @Value("${bot.name}")String botUsername,
-                                     FuelStatisticsService fuelStatisticsService, DateValidator dateValidator, DateTimeFormatter dateTimeFormatter) {
+                                     FuelStatisticsService fuelStatisticsService, DateValidator dateValidator,
+                                     DateTimeFormatter dateTimeFormatter) {
         super(token);
 
         this.botUsername = botUsername;
         this.fuelStatisticsService = fuelStatisticsService;
         this.dateValidator = dateValidator;
         this.dateTimeFormatter = dateTimeFormatter;
+
+
+        commandList = List.of(new BotCommand(START, "привітання"),
+                new BotCommand(FUEL_STATISTICS, "файл з статистикою"),
+                new BotCommand(HELP, "туторіал по командам"));
+
+        executeCommandList();
+    }
+
+    private void executeCommandList() {
+        try {
+            SetMyCommands myCommands =
+                    new SetMyCommands(commandList, new BotCommandScopeDefault(), null);
+            execute(myCommands);
+        } catch (TelegramApiException e) {
+            LOG.error("Command list execute error", e);
+        }
     }
 
     @Override
@@ -148,13 +169,12 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Такої дати не існує. Або вона введене в невірному форматі.\n" +
                     "Щоб пеглянути формат вокличіть команду /help");
         }
-
-
-
     }
 
     private void unknownCommand(long chatId) {
         String message = "Доу! Не вдалося розпізнати команду. \nЩоб отримати список команд використайте /help";
         sendMessage(chatId, message);
     }
+
+
 }
