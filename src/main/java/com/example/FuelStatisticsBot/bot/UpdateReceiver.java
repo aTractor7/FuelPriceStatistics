@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class UpdateReceiver {
@@ -21,9 +22,12 @@ public class UpdateReceiver {
 
     private final List<Handler> handlerList;
 
+    private final Map<String, State> messageToStateMap;
+
     @Autowired
-    public UpdateReceiver(List<Handler> handlerList) {
+    public UpdateReceiver(List<Handler> handlerList, Map<String, State> messageToStateMap) {
         this.handlerList = handlerList;
+        this.messageToStateMap = messageToStateMap;
     }
 
 
@@ -39,9 +43,9 @@ public class UpdateReceiver {
 
                 if(!userList.contains(user)) userList.add(user);
 
-                System.out.println("test");
+                if(user.getState().equals(State.NONE)) setStateByMessage(user, message);
 
-               return getHandlerByState(user.getState()).handle(user, message.getText());
+                return getHandlerByState(user.getState()).handle(user, message.getText());
             } else if (update.hasCallbackQuery()) {
                 final CallbackQuery callbackQuery = update.getCallbackQuery();
                 final long chatId = callbackQuery.getFrom().getId();
@@ -56,8 +60,8 @@ public class UpdateReceiver {
 
             throw new UnsupportedOperationException();
         }catch (UnsupportedOperationException e){
-            //TODO add customer exception
-            return null;
+            //TODO return empty list
+            throw new RuntimeException("unsupported command");
         }
     }
 
@@ -77,6 +81,13 @@ public class UpdateReceiver {
                 .orElseThrow(UnsupportedOperationException::new);
     }
 
+
+    private void setStateByMessage(User user, Message message) throws UnsupportedOperationException{
+        if(messageToStateMap.containsKey(message.getText()))
+            user.setState(messageToStateMap.get(message.getText()));
+        else
+            throw new UnsupportedOperationException();
+    }
 
     private boolean isMassageWithText(Update update) {
         return !update.hasCallbackQuery() && update.hasMessage() && update.getMessage().hasText();

@@ -1,7 +1,10 @@
 package com.example.FuelStatisticsBot.bot;
 
+import com.example.FuelStatisticsBot.handler.Handler;
+import com.example.FuelStatisticsBot.handler.impl.StartHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -146,7 +149,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
 //        try{
 //            execute(sendMessage);
 //        }catch (TelegramApiException e) {
-//            LOG.error("Massage send error", e);
+//
 //        }
 //    }
 //

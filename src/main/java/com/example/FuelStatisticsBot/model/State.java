@@ -4,5 +4,6 @@ public enum State {
     START,
     ENTER_FIRST_DATE,
     ENTER_SECOND_DATE,
-    NONE
+    NONE,
+    HELP
 }
