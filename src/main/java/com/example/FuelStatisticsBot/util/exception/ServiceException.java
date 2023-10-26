@@ -1,4 +1,4 @@
-package com.example.FuelStatisticsBot.util;
+package com.example.FuelStatisticsBot.util.exception;
 
 public class ServiceException extends RuntimeException{
     public ServiceException(String massage, Throwable cause) {
