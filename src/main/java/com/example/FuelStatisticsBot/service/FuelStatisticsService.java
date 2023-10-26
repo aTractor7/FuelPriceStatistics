@@ -3,7 +3,6 @@ package com.example.FuelStatisticsBot.service;
 import com.example.FuelStatisticsBot.client.FuelClient;
 import com.example.FuelStatisticsBot.model.Fuel;
 import com.example.FuelStatisticsBot.model.FuelType;
-import com.example.FuelStatisticsBot.util.FuelStatisticsFileEditor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +24,7 @@ public class FuelStatisticsService {
     }
 
 
-    public File fillStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) {
+    public File getStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) {
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(start, end);
 
         trimDate(start, end, fuelDateMap);

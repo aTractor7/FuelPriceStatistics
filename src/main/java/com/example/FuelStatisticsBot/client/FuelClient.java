@@ -2,7 +2,7 @@ package com.example.FuelStatisticsBot.client;
 
 import com.example.FuelStatisticsBot.model.Fuel;
 import com.example.FuelStatisticsBot.model.FuelType;
-import com.example.FuelStatisticsBot.util.ClientException;
+import com.example.FuelStatisticsBot.util.exception.ClientException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;

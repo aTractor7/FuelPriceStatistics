@@ -1,9 +1,8 @@
-package com.example.FuelStatisticsBot.util;
+package com.example.FuelStatisticsBot.service;
 
 import com.example.FuelStatisticsBot.model.Fuel;
 import com.example.FuelStatisticsBot.model.FuelType;
 import org.apache.poi.xwpf.usermodel.*;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
@@ -28,11 +27,11 @@ public class FuelStatisticsFileEditor {
     @Value("${fuel.file.pass}")
     private String filePass;
 
-    private final DateTimeFormatter formatter;
+    private final DateTimeFormatter dateTimeFormatter;
 
     @Autowired
     public FuelStatisticsFileEditor(DateTimeFormatter formatter) {
-        this.formatter = formatter;
+        this.dateTimeFormatter = formatter;
     }
 
     public File getFuelStatisticsFile(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
@@ -79,7 +78,7 @@ public class FuelStatisticsFileEditor {
             XWPFTableRow row = rowIterator.next();
             Iterator<XWPFTableCell> cellIterator = row.getTableCells().iterator();
 
-            cellIterator.next().setText(key.format(formatter));
+            cellIterator.next().setText(key.format(dateTimeFormatter));
 
             for(Fuel fuel: fuelDateMap.get(key)) {
                 if(requiredFuel.contains(fuel.getFuelType())) {
@@ -132,9 +131,9 @@ public class FuelStatisticsFileEditor {
         for(LocalDate date: dateSet) {
             builder
                     .append("з ")
-                    .append(date.format(formatter))
+                    .append(date.format(dateTimeFormatter))
                     .append("р по ")
-                    .append(lastElement.format(formatter))
+                    .append(lastElement.format(dateTimeFormatter))
                     .append("р.                     ")
                     .append(percentsIterator.next())
                     .append("%             ");

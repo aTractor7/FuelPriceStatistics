@@ -44,6 +44,7 @@ public class UpdateReceiver {
                 if(!userList.contains(user)) userList.add(user);
 
                 if(user.getState().equals(State.NONE)) setStateByMessage(user, message);
+                if(user.getState().equals(State.NONE)) setStateByMessage(user, message);
 
                 return getHandlerByState(user.getState()).handle(user, message.getText());
             } else if (update.hasCallbackQuery()) {

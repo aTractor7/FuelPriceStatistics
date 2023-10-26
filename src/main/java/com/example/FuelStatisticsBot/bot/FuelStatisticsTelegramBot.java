@@ -9,6 +9,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -48,6 +49,9 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
                 if(response instanceof SendMessage) {
                     executeWithExceptionCheck((SendMessage) response);
                 }
+                else if(response instanceof SendDocument) {
+                    executeFileWithExceptionCheck((SendDocument) response);
+                }
             });
         }
     }
@@ -59,6 +63,25 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
             throw new RuntimeException("Message execute error");
         }
     }
+
+    private void executeFileWithExceptionCheck(SendDocument sendDocument) {
+        try {
+            execute(sendDocument);
+        }catch (TelegramApiException e) {
+            throw new RuntimeException("File execute error");
+        }
+    }
+
+
+
+//        String chatIdStr = String.valueOf(chatId);
+//        SendDocument sendDocument = new SendDocument(chatIdStr, file);
+//        try{
+//            execute(sendDocument);
+//        }catch (TelegramApiException e) {
+//            LOG.error("Document send error", e);
+//        }
+//    }
 
 
 
