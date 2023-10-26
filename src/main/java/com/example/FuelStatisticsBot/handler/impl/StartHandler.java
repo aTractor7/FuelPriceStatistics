@@ -23,7 +23,7 @@ public class StartHandler implements Handler {
     private String botName;
 
     private final static String START_TEXT = """
-                                              Привіт %s!
+                                              Привіт!
                                               Я %s.
                                               """;
     private final static String HELP_MESSAGE = "Для отримання списку команд викличи /help";
@@ -32,7 +32,7 @@ public class StartHandler implements Handler {
     @Override
     public List<PartialBotApiMethod<? extends Serializable>> handle(User user, String message) {
         SendMessage welcomeMessage = createMessageTemplate(user);
-        welcomeMessage.setText(String.format(START_TEXT, user.getUserName(), botName));
+        welcomeMessage.setText(String.format(START_TEXT, botName));
 
         SendMessage helpMessage = createMessageTemplate(user);
         helpMessage.setText(HELP_MESSAGE);

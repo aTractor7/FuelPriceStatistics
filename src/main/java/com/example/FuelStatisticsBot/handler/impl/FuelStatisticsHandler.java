@@ -36,8 +36,6 @@ public class FuelStatisticsHandler implements Handler {
     private final DateTimeFormatter dateTimeFormatter;
     private final FuelStatisticsService fuelStatisticsService;
 
-    private LocalDate start;
-    private LocalDate end;
 
     @Autowired
     public FuelStatisticsHandler(DateTimeFormatter dateTimeFormatter, FuelStatisticsService fuelStatisticsService) {
@@ -57,9 +55,9 @@ public class FuelStatisticsHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> getStatistics(User user) {
-        if(start == null || end == null) return Collections.emptyList();
+        if(user.getStartDate() == null || user.getEndDate() == null) return Collections.emptyList();
 
-        File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(start, end,
+        File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(user.getStartDate(), user.getEndDate(),
                 List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
 
         SendDocument fuelStatisticsDocument = createDocumentTemplate(user);
@@ -69,8 +67,8 @@ public class FuelStatisticsHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> canselDates(User user) {
-        start = null;
-        end = null;
+        user.setStartDate(null);
+        user.setEndDate(null);
 
         SendMessage canselMessage = createMessageTemplate(user);
         canselMessage.setText("Введені вами дати були стерті\nЩоб ввести заново використовуйте /getStatistics");
@@ -87,16 +85,16 @@ public class FuelStatisticsHandler implements Handler {
         try {
             LocalDate date = parseStringToDateAndValidate(message);
 
-            if(start == null){
-                start = date;
+            if(user.getStartDate() == null){
+                user.setStartDate(date);
                 sendMessage.setText("Введіть другу дату");
             }
             else {
-                end = date;
-                validateDates(start, end);
+                user.setEndDate(date);
+                validateDates(user.getStartDate(), user.getEndDate());
 
                 sendMessage.setText(String.format("Починаємо збір інформації за цими датами?\n %s - %s",
-                        start.format(dateTimeFormatter), end.format(dateTimeFormatter)));
+                        user.getStartDate().format(dateTimeFormatter), user.getEndDate().format(dateTimeFormatter)));
                 sendMessage.setReplyMarkup(createKeyboardMarkupForCheckDates());
             }
 

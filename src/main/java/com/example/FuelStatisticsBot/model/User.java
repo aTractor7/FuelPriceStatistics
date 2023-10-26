@@ -1,5 +1,7 @@
 package com.example.FuelStatisticsBot.model;
 
+import java.time.LocalDate;
+
 public class User {
 
     private long chatId;
@@ -7,6 +9,10 @@ public class User {
     private String userName;
 
     private State state;
+
+    private LocalDate startDate;
+
+    private LocalDate endDate;
 
     public User(long chatId, String userName, State state) {
         this.chatId = chatId;
@@ -44,5 +50,21 @@ public class User {
 
     public void setState(State state) {
         this.state = state;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
     }
 }
