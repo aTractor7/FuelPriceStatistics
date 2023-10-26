@@ -9,12 +9,16 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -26,6 +30,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
     private String botName;
 
     private final UpdateReceiver updateReceiver;
+    private final List<BotCommand> commandList;
 
     @Autowired
     public FuelStatisticsTelegramBot(@Value("${bot.token}") String token,
@@ -33,6 +38,9 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
         super(token);
 
         this.updateReceiver = updateReceiver;
+
+        commandList = List.of(new BotCommand("/get_statistics", "файл з статистикою"),
+                new BotCommand("/help", "туторіал по командам"));
     }
 
     @Override
@@ -73,20 +81,17 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
     }
 
 
-
-//        String chatIdStr = String.valueOf(chatId);
-//        SendDocument sendDocument = new SendDocument(chatIdStr, file);
-//        try{
-//            execute(sendDocument);
-//        }catch (TelegramApiException e) {
-//            LOG.error("Document send error", e);
-//        }
+    //TODO find why this method always throw exception
+    private void executeCommandList() {
+        try {
+            SetMyCommands myCommands =
+                    new SetMyCommands(List.of(new BotCommand(), new BotCommand()), new BotCommandScopeDefault(), null);
+            execute(myCommands);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException("Command list execute error");
+        }
+    }
 //    }
-
-
-
-
-
 //    private final Logger LOG = LoggerFactory.getLogger(FuelStatisticsTelegramBot.class);
 //
 //    private static final String START = "/start";

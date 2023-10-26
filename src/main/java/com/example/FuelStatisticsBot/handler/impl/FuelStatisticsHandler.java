@@ -27,7 +27,6 @@ import static com.example.FuelStatisticsBot.util.DatesValidator.validateDates;
 import static com.example.FuelStatisticsBot.util.TelegramUtil.*;
 
 @Component
-@Scope("prototype")
 public class FuelStatisticsHandler implements Handler {
 
     private static final String ACCEPT_DATES = "/accept_dates";
