@@ -6,6 +6,8 @@ import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.StatisticsData;
 import com.example.FuelStatisticsBot.model.User;
 import com.example.FuelStatisticsBot.service.FuelStatisticsService;
+import org.apache.commons.collections4.map.LinkedMap;
+import org.apache.commons.math3.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
@@ -20,9 +22,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.example.FuelStatisticsBot.util.DatesValidator.validateDates;
 import static com.example.FuelStatisticsBot.util.TelegramUtil.*;
@@ -33,6 +33,7 @@ public class FuelStatisticsHandler implements Handler {
     private static final String ACCEPT_DATES = "/accept_dates";
     private static final String CANSEL_DATES = "/cancel_dates";
 
+    private static final int KEYBOARD_ROW_SIZE = 4;
 
     private final DateTimeFormatter dateTimeFormatter;
     private final FuelStatisticsService fuelStatisticsService;
@@ -106,33 +107,42 @@ public class FuelStatisticsHandler implements Handler {
                 sendMessage.setText(String.format("Починаємо збір інформації за цими датами?\n %s - %s",
                         statisticsData.getStartDate().format(dateTimeFormatter),
                         statisticsData.getEndDate().format(dateTimeFormatter)));
-                sendMessage.setReplyMarkup(createKeyboardMarkupForCheckDates());
+                sendMessage.setReplyMarkup(
+                        createDefaultRowSizeKeyboardMarkup(List.of(
+                                new Pair<> ("Почати", ACCEPT_DATES),
+                                new Pair<> ("Відмінити", CANSEL_DATES))));
             }
 
         }catch (DateTimeParseException | IllegalArgumentException e) {
             sendMessage.setText(e.getMessage() + "\nВведіть заново.");
+            sendMessage.setReplyMarkup(
+                    createDefaultRowSizeKeyboardMarkup(List.of(
+                            new Pair<>("Відміна", CANSEL_DATES))));
         }
         return List.of(sendMessage);
     }
 
-    private InlineKeyboardMarkup createKeyboardMarkupForCheckDates() {
+
+    private InlineKeyboardMarkup createDefaultRowSizeKeyboardMarkup(List<Pair<String, String>> buttonList) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> rowI = new ArrayList<>();
 
-        List<InlineKeyboardButton> inlineKeyboardButtons = List.of(
-                createInlineKeyBoardButton("Почати", ACCEPT_DATES),
-                createInlineKeyBoardButton("Відміна", CANSEL_DATES)
-        );
 
-        inlineKeyboardMarkup.setKeyboard(List.of(inlineKeyboardButtons));
+        for(int i = 0; i < buttonList.size(); i++) {
+            var pair = buttonList.get(i);
+            rowI.add(createInlineKeyBoardButton(pair.getKey(), pair.getValue()));
+            //TODO check why it's not work
+            if((i + 1) % KEYBOARD_ROW_SIZE == 0) {
+                rows.add(rowI);
+                rowI.clear();
+            }
+        }
+        rows.add(rowI);
 
+        inlineKeyboardMarkup.setKeyboard(rows);
         return inlineKeyboardMarkup;
     }
-
-//    private InlineKeyboardMarkup createKeyboardMarkup(Map<String, String> buttonMap) {
-//        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-//
-//
-//    }
 
     private LocalDate parseStringToDateAndValidate(String text) {
         try{
