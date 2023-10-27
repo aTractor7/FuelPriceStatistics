@@ -3,10 +3,10 @@ package com.example.FuelStatisticsBot.handler.impl;
 import com.example.FuelStatisticsBot.handler.Handler;
 import com.example.FuelStatisticsBot.model.FuelType;
 import com.example.FuelStatisticsBot.model.State;
+import com.example.FuelStatisticsBot.model.StatisticsData;
 import com.example.FuelStatisticsBot.model.User;
 import com.example.FuelStatisticsBot.service.FuelStatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static com.example.FuelStatisticsBot.util.DatesValidator.validateDates;
 import static com.example.FuelStatisticsBot.util.TelegramUtil.*;
@@ -55,23 +56,29 @@ public class FuelStatisticsHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> getStatistics(User user) {
-        if(user.getStartDate() == null || user.getEndDate() == null) return Collections.emptyList();
+        if(user.getStatisticsData() == null) return Collections.emptyList();
+        StatisticsData statisticsData = user.getStatisticsData();
 
-        File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(user.getStartDate(), user.getEndDate(),
+        if(statisticsData.getStartDate() == null || statisticsData.getEndDate() == null) return Collections.emptyList();
+
+        File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(
+                statisticsData.getStartDate(), statisticsData.getEndDate(),
                 List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
 
         SendDocument fuelStatisticsDocument = createDocumentTemplate(user);
         fuelStatisticsDocument.setDocument(new InputFile(fuelStatisticsFile));
 
+        user.setStatisticsData(null);
+        user.setState(State.NONE);
+
         return List.of(fuelStatisticsDocument);
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> canselDates(User user) {
-        user.setStartDate(null);
-        user.setEndDate(null);
+        user.setStatisticsData(null);
 
         SendMessage canselMessage = createMessageTemplate(user);
-        canselMessage.setText("Введені вами дати були стерті\nЩоб ввести заново використовуйте /getStatistics");
+        canselMessage.setText("Введені вами дати були стерті\nЩоб ввести заново використовуйте /get\\_statistics");
 
         user.setState(State.NONE);
 
@@ -85,21 +92,25 @@ public class FuelStatisticsHandler implements Handler {
         try {
             LocalDate date = parseStringToDateAndValidate(message);
 
-            if(user.getStartDate() == null){
-                user.setStartDate(date);
+            StatisticsData statisticsData = user.getStatisticsData();
+            if(statisticsData == null){
+                statisticsData = new StatisticsData();
+                statisticsData.setStartDate(date);
+                user.setStatisticsData(statisticsData);
                 sendMessage.setText("Введіть другу дату");
             }
             else {
-                user.setEndDate(date);
-                validateDates(user.getStartDate(), user.getEndDate());
+                statisticsData.setEndDate(date);
+                validateDates(statisticsData.getStartDate(), statisticsData.getEndDate());
 
                 sendMessage.setText(String.format("Починаємо збір інформації за цими датами?\n %s - %s",
-                        user.getStartDate().format(dateTimeFormatter), user.getEndDate().format(dateTimeFormatter)));
+                        statisticsData.getStartDate().format(dateTimeFormatter),
+                        statisticsData.getEndDate().format(dateTimeFormatter)));
                 sendMessage.setReplyMarkup(createKeyboardMarkupForCheckDates());
             }
 
         }catch (DateTimeParseException | IllegalArgumentException e) {
-            sendMessage.setText(e.getMessage() + "\nВведіть заново");
+            sendMessage.setText(e.getMessage() + "\nВведіть заново.");
         }
         return List.of(sendMessage);
     }
@@ -116,6 +127,12 @@ public class FuelStatisticsHandler implements Handler {
 
         return inlineKeyboardMarkup;
     }
+
+//    private InlineKeyboardMarkup createKeyboardMarkup(Map<String, String> buttonMap) {
+//        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+//
+//
+//    }
 
     private LocalDate parseStringToDateAndValidate(String text) {
         try{

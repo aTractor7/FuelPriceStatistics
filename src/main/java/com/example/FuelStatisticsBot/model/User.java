@@ -5,14 +5,10 @@ import java.time.LocalDate;
 public class User {
 
     private long chatId;
-
     private String name;
-
     private State state;
 
-    private LocalDate startDate;
-
-    private LocalDate endDate;
+    private StatisticsData statisticsData;
 
     public User(long chatId, String name, State state) {
         this.chatId = chatId;
@@ -52,19 +48,11 @@ public class User {
         this.state = state;
     }
 
-    public LocalDate getStartDate() {
-        return startDate;
+    public StatisticsData getStatisticsData() {
+        return statisticsData;
     }
 
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
+    public void setStatisticsData(StatisticsData statisticsData) {
+        this.statisticsData = statisticsData;
     }
 }
