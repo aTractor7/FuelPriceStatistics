@@ -18,7 +18,7 @@ public class HelpHandler implements Handler {
 
     private final static String HELP_MESSAGE = """
             Для отримання файлу з статистикою використовуйте команду:
-            /getStatistics
+            /get\\_statistics
 
             Для переліку команд використовуйте:
             /help

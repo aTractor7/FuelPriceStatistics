@@ -30,7 +30,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
     private String botName;
 
     private final UpdateReceiver updateReceiver;
-//    private final List<BotCommand> commandList;
+    private final List<BotCommand> commandList;
 
     @Autowired
     public FuelStatisticsTelegramBot(@Value("${bot.token}") String token,
@@ -39,9 +39,9 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
 
         this.updateReceiver = updateReceiver;
 
-//        commandList = List.of(new BotCommand("/get_statistics", "файл з статистикою"),
-//                new BotCommand("/help", "туторіал по командам"));
-//        executeCommandList();
+        commandList = List.of(new BotCommand("/get_statistics", "файл з статистикою"),
+                new BotCommand("/help", "туторіал по командам"));
+        executeCommandList();
     }
 
     @Override
@@ -81,15 +81,13 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
         }
     }
 
-
-    //TODO find why this method always throw exception
-//    private void executeCommandList() {
-//        try {
-//            SetMyCommands myCommands =
-//                    new SetMyCommands(commandList, new BotCommandScopeDefault(), null);
-//            execute(myCommands);
-//        } catch (TelegramApiException e) {
-//            throw new RuntimeException("Command list execute error");
-//        }
-//    }
+    private void executeCommandList() {
+        try {
+            SetMyCommands myCommands =
+                    new SetMyCommands(commandList, new BotCommandScopeDefault(), null);
+            execute(myCommands);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException("Command list execute error");
+        }
+    }
 }
