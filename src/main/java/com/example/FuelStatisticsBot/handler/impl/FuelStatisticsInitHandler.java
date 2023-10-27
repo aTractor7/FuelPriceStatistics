@@ -4,7 +4,6 @@ package com.example.FuelStatisticsBot.handler.impl;
 import com.example.FuelStatisticsBot.handler.Handler;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.User;
-import com.example.FuelStatisticsBot.util.TelegramUtil;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;

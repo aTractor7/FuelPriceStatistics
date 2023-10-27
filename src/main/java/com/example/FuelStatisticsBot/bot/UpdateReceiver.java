@@ -36,10 +36,10 @@ public class UpdateReceiver {
             if(isMassageWithText(update)) {
                 final Message message = update.getMessage();
                 final long chatId = message.getChatId();
-                final String userName = message.getFrom().getUserName();
+                final String name = message.getFrom().getFirstName();
 
                 final User user = userList.stream().filter(u -> u.getChatId() == chatId).findAny()
-                        .orElseGet(() -> new User(chatId, userName, State.START));
+                        .orElseGet(() -> new User(chatId, name, State.START));
 
                 if(!userList.contains(user)) userList.add(user);
 

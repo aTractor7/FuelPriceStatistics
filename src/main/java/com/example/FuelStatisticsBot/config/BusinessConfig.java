@@ -33,7 +33,7 @@ public class BusinessConfig {
 
         messageToStateMap.put("/start", State.START);
         messageToStateMap.put("/help", State.HELP);
-        messageToStateMap.put("/getStatistics", State.FUEL_STATISTICS_INIT);
+        messageToStateMap.put("/get_statistics", State.FUEL_STATISTICS_INIT);
 
         return messageToStateMap;
     }

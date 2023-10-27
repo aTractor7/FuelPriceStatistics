@@ -5,24 +5,20 @@ import java.time.LocalDate;
 public class User {
 
     private long chatId;
-
-    private String userName;
-
+    private String name;
     private State state;
 
-    private LocalDate startDate;
+    private StatisticsData statisticsData;
 
-    private LocalDate endDate;
-
-    public User(long chatId, String userName, State state) {
+    public User(long chatId, String name, State state) {
         this.chatId = chatId;
-        this.userName = userName;
+        this.name = name;
         this.state = state;
     }
 
-    public User(long chatId, String userName) {
+    public User(long chatId, String name) {
         this.chatId = chatId;
-        this.userName = userName;
+        this.name = name;
         state = State.NONE;
     }
 
@@ -36,12 +32,12 @@ public class User {
         this.chatId = chatId;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getName() {
+        return name;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public State getState() {
@@ -52,19 +48,11 @@ public class User {
         this.state = state;
     }
 
-    public LocalDate getStartDate() {
-        return startDate;
+    public StatisticsData getStatisticsData() {
+        return statisticsData;
     }
 
-    public void setStartDate(LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(LocalDate endDate) {
-        this.endDate = endDate;
+    public void setStatisticsData(StatisticsData statisticsData) {
+        this.statisticsData = statisticsData;
     }
 }

@@ -3,10 +3,12 @@ package com.example.FuelStatisticsBot.handler.impl;
 import com.example.FuelStatisticsBot.handler.Handler;
 import com.example.FuelStatisticsBot.model.FuelType;
 import com.example.FuelStatisticsBot.model.State;
+import com.example.FuelStatisticsBot.model.StatisticsData;
 import com.example.FuelStatisticsBot.model.User;
 import com.example.FuelStatisticsBot.service.FuelStatisticsService;
+import org.apache.commons.collections4.map.LinkedMap;
+import org.apache.commons.math3.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -20,8 +22,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.example.FuelStatisticsBot.util.DatesValidator.validateDates;
 import static com.example.FuelStatisticsBot.util.TelegramUtil.*;
@@ -32,6 +33,7 @@ public class FuelStatisticsHandler implements Handler {
     private static final String ACCEPT_DATES = "/accept_dates";
     private static final String CANSEL_DATES = "/cancel_dates";
 
+    private static final int KEYBOARD_ROW_SIZE = 4;
 
     private final DateTimeFormatter dateTimeFormatter;
     private final FuelStatisticsService fuelStatisticsService;
@@ -55,23 +57,29 @@ public class FuelStatisticsHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> getStatistics(User user) {
-        if(user.getStartDate() == null || user.getEndDate() == null) return Collections.emptyList();
+        if(user.getStatisticsData() == null) return Collections.emptyList();
+        StatisticsData statisticsData = user.getStatisticsData();
 
-        File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(user.getStartDate(), user.getEndDate(),
+        if(statisticsData.getStartDate() == null || statisticsData.getEndDate() == null) return Collections.emptyList();
+
+        File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(
+                statisticsData.getStartDate(), statisticsData.getEndDate(),
                 List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
 
         SendDocument fuelStatisticsDocument = createDocumentTemplate(user);
         fuelStatisticsDocument.setDocument(new InputFile(fuelStatisticsFile));
 
+        user.setStatisticsData(null);
+        user.setState(State.NONE);
+
         return List.of(fuelStatisticsDocument);
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> canselDates(User user) {
-        user.setStartDate(null);
-        user.setEndDate(null);
+        user.setStatisticsData(null);
 
         SendMessage canselMessage = createMessageTemplate(user);
-        canselMessage.setText("Введені вами дати були стерті\nЩоб ввести заново використовуйте /getStatistics");
+        canselMessage.setText("Введені вами дати були стерті\nЩоб ввести заново використовуйте /get\\_statistics");
 
         user.setState(State.NONE);
 
@@ -85,35 +93,54 @@ public class FuelStatisticsHandler implements Handler {
         try {
             LocalDate date = parseStringToDateAndValidate(message);
 
-            if(user.getStartDate() == null){
-                user.setStartDate(date);
+            StatisticsData statisticsData = user.getStatisticsData();
+            if(statisticsData == null){
+                statisticsData = new StatisticsData();
+                statisticsData.setStartDate(date);
+                user.setStatisticsData(statisticsData);
                 sendMessage.setText("Введіть другу дату");
             }
             else {
-                user.setEndDate(date);
-                validateDates(user.getStartDate(), user.getEndDate());
+                statisticsData.setEndDate(date);
+                validateDates(statisticsData.getStartDate(), statisticsData.getEndDate());
 
                 sendMessage.setText(String.format("Починаємо збір інформації за цими датами?\n %s - %s",
-                        user.getStartDate().format(dateTimeFormatter), user.getEndDate().format(dateTimeFormatter)));
-                sendMessage.setReplyMarkup(createKeyboardMarkupForCheckDates());
+                        statisticsData.getStartDate().format(dateTimeFormatter),
+                        statisticsData.getEndDate().format(dateTimeFormatter)));
+                sendMessage.setReplyMarkup(
+                        createDefaultRowSizeKeyboardMarkup(List.of(
+                                new Pair<> ("Почати", ACCEPT_DATES),
+                                new Pair<> ("Відмінити", CANSEL_DATES))));
             }
 
         }catch (DateTimeParseException | IllegalArgumentException e) {
-            sendMessage.setText(e.getMessage() + "\nВведіть заново");
+            sendMessage.setText(e.getMessage() + "\nВведіть заново.");
+            sendMessage.setReplyMarkup(
+                    createDefaultRowSizeKeyboardMarkup(List.of(
+                            new Pair<>("Відміна", CANSEL_DATES))));
         }
         return List.of(sendMessage);
     }
 
-    private InlineKeyboardMarkup createKeyboardMarkupForCheckDates() {
+
+    private InlineKeyboardMarkup createDefaultRowSizeKeyboardMarkup(List<Pair<String, String>> buttonList) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> rowI = new ArrayList<>();
 
-        List<InlineKeyboardButton> inlineKeyboardButtons = List.of(
-                createInlineKeyBoardButton("Почати", ACCEPT_DATES),
-                createInlineKeyBoardButton("Відміна", CANSEL_DATES)
-        );
 
-        inlineKeyboardMarkup.setKeyboard(List.of(inlineKeyboardButtons));
+        for(int i = 0; i < buttonList.size(); i++) {
+            var pair = buttonList.get(i);
+            rowI.add(createInlineKeyBoardButton(pair.getKey(), pair.getValue()));
+            //TODO check why it's not work
+            if((i + 1) % KEYBOARD_ROW_SIZE == 0) {
+                rows.add(rowI);
+                rowI.clear();
+            }
+        }
+        rows.add(rowI);
 
+        inlineKeyboardMarkup.setKeyboard(rows);
         return inlineKeyboardMarkup;
     }
 
