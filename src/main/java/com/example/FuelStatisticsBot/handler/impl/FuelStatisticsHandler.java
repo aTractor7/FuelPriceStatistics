@@ -33,8 +33,6 @@ public class FuelStatisticsHandler implements Handler {
     private static final String ACCEPT_DATES = "/accept_dates";
     private static final String CANSEL_DATES = "/cancel_dates";
 
-    private static final int KEYBOARD_ROW_SIZE = 4;
-
     private final DateTimeFormatter dateTimeFormatter;
     private final FuelStatisticsService fuelStatisticsService;
 
@@ -108,7 +106,7 @@ public class FuelStatisticsHandler implements Handler {
                         statisticsData.getStartDate().format(dateTimeFormatter),
                         statisticsData.getEndDate().format(dateTimeFormatter)));
                 sendMessage.setReplyMarkup(
-                        createDefaultRowSizeKeyboardMarkup(List.of(
+                        createOneRowSizeKeyboardMarkup(List.of(
                                 new Pair<> ("Почати", ACCEPT_DATES),
                                 new Pair<> ("Відмінити", CANSEL_DATES))));
             }
@@ -116,27 +114,21 @@ public class FuelStatisticsHandler implements Handler {
         }catch (DateTimeParseException | IllegalArgumentException e) {
             sendMessage.setText(e.getMessage() + "\nВведіть заново.");
             sendMessage.setReplyMarkup(
-                    createDefaultRowSizeKeyboardMarkup(List.of(
+                    createOneRowSizeKeyboardMarkup(List.of(
                             new Pair<>("Відміна", CANSEL_DATES))));
         }
         return List.of(sendMessage);
     }
 
 
-    private InlineKeyboardMarkup createDefaultRowSizeKeyboardMarkup(List<Pair<String, String>> buttonList) {
+    private InlineKeyboardMarkup createOneRowSizeKeyboardMarkup(List<Pair<String, String>> buttonList) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> rowI = new ArrayList<>();
 
 
-        for(int i = 0; i < buttonList.size(); i++) {
-            var pair = buttonList.get(i);
+        for (Pair<String, String> pair : buttonList) {
             rowI.add(createInlineKeyBoardButton(pair.getKey(), pair.getValue()));
-            //TODO check why it's not work
-            if((i + 1) % KEYBOARD_ROW_SIZE == 0) {
-                rows.add(rowI);
-                rowI.clear();
-            }
         }
         rows.add(rowI);
 
