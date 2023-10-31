@@ -1,6 +1,11 @@
 bot.name =
 bot.token =
 
+spring.datasource.driver-class-name=
+spring.datasource.url=
+spring.datasource.username=
+spring.datasource.password=
+
 fuel.inf.url = https://index.minfin.com.ua/markets/fuel/%s/
 fuel.file.pass = src/main/resources/file/FuelStatistics.docx
 

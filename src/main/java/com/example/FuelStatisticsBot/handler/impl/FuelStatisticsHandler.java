@@ -6,7 +6,8 @@ import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.StatisticsData;
 import com.example.FuelStatisticsBot.model.User;
 import com.example.FuelStatisticsBot.service.FuelStatisticsService;
-import org.apache.commons.collections4.map.LinkedMap;
+import com.example.FuelStatisticsBot.service.StatisticsDataService;
+import com.example.FuelStatisticsBot.service.UserService;
 import org.apache.commons.math3.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -35,12 +36,16 @@ public class FuelStatisticsHandler implements Handler {
 
     private final DateTimeFormatter dateTimeFormatter;
     private final FuelStatisticsService fuelStatisticsService;
+    private final UserService userService;
+    private final StatisticsDataService statisticsDataService;
 
 
     @Autowired
-    public FuelStatisticsHandler(DateTimeFormatter dateTimeFormatter, FuelStatisticsService fuelStatisticsService) {
+    public FuelStatisticsHandler(DateTimeFormatter dateTimeFormatter, FuelStatisticsService fuelStatisticsService, UserService userService, StatisticsDataService statisticsDataService) {
         this.dateTimeFormatter = dateTimeFormatter;
         this.fuelStatisticsService = fuelStatisticsService;
+        this.userService = userService;
+        this.statisticsDataService = statisticsDataService;
     }
 
     @Override
@@ -55,7 +60,7 @@ public class FuelStatisticsHandler implements Handler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> getStatistics(User user) {
-        if(user.getStatisticsData() == null) return Collections.emptyList();
+        if(user.getStatisticsData().isEmpty()) return Collections.emptyList();
         StatisticsData statisticsData = user.getStatisticsData();
 
         if(statisticsData.getStartDate() == null || statisticsData.getEndDate() == null) return Collections.emptyList();
@@ -67,19 +72,22 @@ public class FuelStatisticsHandler implements Handler {
         SendDocument fuelStatisticsDocument = createDocumentTemplate(user);
         fuelStatisticsDocument.setDocument(new InputFile(fuelStatisticsFile));
 
-        user.setStatisticsData(null);
+
+        user.getStatisticsData().clear();
         user.setState(State.NONE);
+        userService.update(user.getChatId(), user);
 
         return List.of(fuelStatisticsDocument);
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> canselDates(User user) {
-        user.setStatisticsData(null);
+        user.getStatisticsData().clear();
 
         SendMessage canselMessage = createMessageTemplate(user);
         canselMessage.setText("Введені вами дати були стерті\nЩоб ввести заново використовуйте /get\\_statistics");
 
         user.setState(State.NONE);
+        userService.update(user.getChatId(), user);
 
         return List.of(canselMessage);
     }
@@ -88,19 +96,26 @@ public class FuelStatisticsHandler implements Handler {
 
         SendMessage sendMessage = createMessageTemplate(user);
 
+        StatisticsData statisticsData = user.getStatisticsData();
+        if(statisticsData == null)
+            statisticsData = new StatisticsData();
+
         try {
             LocalDate date = parseStringToDateAndValidate(message);
 
-            StatisticsData statisticsData = user.getStatisticsData();
-            if(statisticsData == null){
-                statisticsData = new StatisticsData();
+            if(statisticsData.isEmpty()){
                 statisticsData.setStartDate(date);
+
                 user.setStatisticsData(statisticsData);
+                statisticsDataService.save(statisticsData);
+
                 sendMessage.setText("Введіть другу дату");
             }
             else {
                 statisticsData.setEndDate(date);
                 validateDates(statisticsData.getStartDate(), statisticsData.getEndDate());
+
+                statisticsDataService.update(statisticsData.getId(), statisticsData);
 
                 sendMessage.setText(String.format("Починаємо збір інформації за цими датами?\n %s - %s",
                         statisticsData.getStartDate().format(dateTimeFormatter),
@@ -112,6 +127,9 @@ public class FuelStatisticsHandler implements Handler {
             }
 
         }catch (DateTimeParseException | IllegalArgumentException e) {
+            statisticsData.clear();
+            statisticsDataService.update(statisticsData.getId(), statisticsData);
+
             sendMessage.setText(e.getMessage() + "\nВведіть заново.");
             sendMessage.setReplyMarkup(
                     createOneRowSizeKeyboardMarkup(List.of(

@@ -3,6 +3,8 @@ package com.example.FuelStatisticsBot.handler.impl;
 import com.example.FuelStatisticsBot.handler.Handler;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.User;
+import com.example.FuelStatisticsBot.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
@@ -22,11 +24,18 @@ public class StartHandler implements Handler {
     @Value("${bot.name}")
     private String botName;
 
+    private final UserService userService;
+
     private final static String START_TEXT = """
                                               Привіт %s!
                                               Я %s.
                                               """;
     private final static String HELP_MESSAGE = "Для отримання списку команд викличи /help";
+
+    @Autowired
+    public StartHandler(UserService userService) {
+        this.userService = userService;
+    }
 
 
     @Override
@@ -38,6 +47,7 @@ public class StartHandler implements Handler {
         helpMessage.setText(HELP_MESSAGE);
 
         user.setState(State.NONE);
+        userService.update(user.getChatId(), user);
 
         return List.of(welcomeMessage, helpMessage);
     }

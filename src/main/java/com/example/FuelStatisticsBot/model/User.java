@@ -1,13 +1,23 @@
 package com.example.FuelStatisticsBot.model;
 
-import java.time.LocalDate;
+import jakarta.persistence.*;
+import org.hibernate.annotations.Cascade;
 
+@Entity
+@Table(name = "user")
 public class User {
 
+    @Id
+    @Column(name = "id")
     private long chatId;
+
+    @Column(name = "name")
     private String name;
+
+    @Enumerated(EnumType.STRING)
     private State state;
 
+    @OneToOne(mappedBy = "owner", cascade = CascadeType.ALL)
     private StatisticsData statisticsData;
 
     public User(long chatId, String name, State state) {
@@ -52,7 +62,11 @@ public class User {
         return statisticsData;
     }
 
+    /**
+     * This method also set owner to statistics data you set
+     * */
     public void setStatisticsData(StatisticsData statisticsData) {
+        statisticsData.setOwner(this);
         this.statisticsData = statisticsData;
     }
 }
