@@ -3,6 +3,7 @@ package com.example.FuelStatisticsBot.bot;
 import com.example.FuelStatisticsBot.handler.Handler;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.User;
+import com.example.FuelStatisticsBot.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
@@ -14,18 +15,22 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 public class UpdateReceiver {
 
     private final List<User> userList = new ArrayList<>();
 
+    private final UserService userService;
+
     private final List<Handler> handlerList;
 
     private final Map<String, State> messageToStateMap;
 
     @Autowired
-    public UpdateReceiver(List<Handler> handlerList, Map<String, State> messageToStateMap) {
+    public UpdateReceiver(UserService userService, List<Handler> handlerList, Map<String, State> messageToStateMap) {
+        this.userService = userService;
         this.handlerList = handlerList;
         this.messageToStateMap = messageToStateMap;
     }
@@ -38,23 +43,30 @@ public class UpdateReceiver {
                 final long chatId = message.getChatId();
                 final String name = message.getFrom().getFirstName();
 
-                final User user = userList.stream().filter(u -> u.getChatId() == chatId).findAny()
-                        .orElseGet(() -> new User(chatId, name, State.START));
+//                final User user = userList.stream().filter(u -> u.getChatId() == chatId).findAny()
+//                        .orElseGet(() -> new User(chatId, name, State.START));
 
-                if(!userList.contains(user)) userList.add(user);
 
-                if(user.getState().equals(State.NONE)) setStateByMessage(user, message);
+
+                final User user = userService.findOne(chatId)
+                        .orElseGet(() -> userService.save(new User(chatId, name, State.START)));
+
+//                if(!userList.contains(user)) userList.add(user);
+
                 if(user.getState().equals(State.NONE)) setStateByMessage(user, message);
 
                 return getHandlerByState(user.getState()).handle(user, message.getText());
             } else if (update.hasCallbackQuery()) {
                 final CallbackQuery callbackQuery = update.getCallbackQuery();
                 final long chatId = callbackQuery.getFrom().getId();
-                final String userName = callbackQuery.getFrom().getUserName();
-                final User user = userList.stream().filter(u -> u.getChatId() == chatId).findAny()
-                        .orElseGet(() -> new User(chatId, userName));
+                final String name = callbackQuery.getFrom().getUserName();
+//                final User user = userList.stream().filter(u -> u.getChatId() == chatId).findAny()
+//                        .orElseGet(() -> new User(chatId, name));
 
-                if(!userList.contains(user)) userList.add(user);
+                final User user = userService.findOne(chatId)
+                        .orElseGet(() -> userService.save(new User(chatId, name)));
+
+//                if(!userList.contains(user)) userList.add(user);
 
                 return getHandlerByCallBackQuery(callbackQuery.getData()).handle(user, callbackQuery.getData());
             }

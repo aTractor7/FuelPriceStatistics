@@ -3,6 +3,7 @@ package com.example.FuelStatisticsBot.service;
 import com.example.FuelStatisticsBot.client.FuelClient;
 import com.example.FuelStatisticsBot.model.Fuel;
 import com.example.FuelStatisticsBot.model.FuelType;
+import com.example.FuelStatisticsBot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +17,8 @@ public class FuelStatisticsService {
 
     private final FuelClient fuelClient;
     private final FuelStatisticsFileEditor fileEditor;
-
     @Autowired
-    public FuelStatisticsService(FuelClient fuelClient, FuelStatisticsFileEditor fileEditor) {
+    public FuelStatisticsService(FuelClient fuelClient, FuelStatisticsFileEditor fileEditor, UserRepository userRepository) {
         this.fuelClient = fuelClient;
         this.fileEditor = fileEditor;
     }
