@@ -12,10 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class UpdateReceiver {
@@ -43,15 +40,8 @@ public class UpdateReceiver {
                 final long chatId = message.getChatId();
                 final String name = message.getFrom().getFirstName();
 
-//                final User user = userList.stream().filter(u -> u.getChatId() == chatId).findAny()
-//                        .orElseGet(() -> new User(chatId, name, State.START));
-
-
-
                 final User user = userService.findOne(chatId)
                         .orElseGet(() -> userService.save(new User(chatId, name, State.START)));
-
-//                if(!userList.contains(user)) userList.add(user);
 
                 if(user.getState().equals(State.NONE)) setStateByMessage(user, message);
 
@@ -60,21 +50,17 @@ public class UpdateReceiver {
                 final CallbackQuery callbackQuery = update.getCallbackQuery();
                 final long chatId = callbackQuery.getFrom().getId();
                 final String name = callbackQuery.getFrom().getUserName();
-//                final User user = userList.stream().filter(u -> u.getChatId() == chatId).findAny()
-//                        .orElseGet(() -> new User(chatId, name));
 
                 final User user = userService.findOne(chatId)
                         .orElseGet(() -> userService.save(new User(chatId, name)));
-
-//                if(!userList.contains(user)) userList.add(user);
 
                 return getHandlerByCallBackQuery(callbackQuery.getData()).handle(user, callbackQuery.getData());
             }
 
             throw new UnsupportedOperationException();
         }catch (UnsupportedOperationException e){
-            //TODO return empty list
-            throw new RuntimeException("unsupported command");
+            //TODO add log
+            return Collections.emptyList();
         }
     }
 
