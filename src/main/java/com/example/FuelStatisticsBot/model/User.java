@@ -1,7 +1,6 @@
 package com.example.FuelStatisticsBot.model;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.Cascade;
 
 @Entity
 @Table(name = "user")
