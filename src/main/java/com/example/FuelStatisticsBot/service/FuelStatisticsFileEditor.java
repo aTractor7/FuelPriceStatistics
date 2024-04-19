@@ -24,6 +24,8 @@ import java.util.Set;
 @PropertySource("application.properties")
 public class FuelStatisticsFileEditor {
 
+    private static final String PRICE_MEASUREMENT = "грн/л";
+
     @Value("${fuel.file.pass}")
     private String filePass;
 
@@ -93,7 +95,7 @@ public class FuelStatisticsFileEditor {
         Iterator<XWPFTableCell> cellIterator = cells.iterator();
         cellIterator.next().setText("Дата");
         for(FuelType fuelType: requiredFuel) {
-            cellIterator.next().setText(parseFuelType(fuelType));
+            cellIterator.next().setText(parseFuelType(fuelType) + ", " + PRICE_MEASUREMENT);
         }
     }
 
@@ -129,13 +131,14 @@ public class FuelStatisticsFileEditor {
         Iterator<Double> percentsIterator = percents.iterator();
 
         for(LocalDate date: dateSet) {
+            String percent = parsePercent(percentsIterator.next());
             builder
                     .append("з ")
                     .append(date.format(dateTimeFormatter))
                     .append("р по ")
                     .append(lastElement.format(dateTimeFormatter))
                     .append("р.                     ")
-                    .append(percentsIterator.next())
+                    .append(percent)
                     .append("%             ");
         }
         return builder.toString();
@@ -145,15 +148,27 @@ public class FuelStatisticsFileEditor {
         String result;
 
         switch (fuelType) {
-            case A95_PLUS -> result = "Бензин А-95 (покращенної якості) грн./л";
-            case A95 -> result = "Бензин А-95 грн./л";
-            case A92 -> result = "Бензин А-92 грн./л";
-            case DT_PLUS -> result = "Дизельне паливо (покращенної якості) грн./л";
-            case DT -> result = "Дизельне паливо грн./л";
-            case GAS -> result = "Газ, грн./л";
+            case A95_PLUS -> result = "Бензин А-95 (покращенної якості)";
+            case A95 -> result = "Бензин А-95";
+            case A92 -> result = "Бензин А-92";
+            case DT_PLUS -> result = "Дизельне паливо (покращенної якості)";
+            case DT -> result = "Дизельне паливо";
+            case GAS -> result = "Газ";
             default -> throw new RuntimeException("No such fuel type");
         }
         return result;
+    }
+
+    private String parsePercent(double percent) {
+        String stringPercent = Double.toString(percent);
+        StringBuilder parsedPercent = new StringBuilder();
+
+        String[] num = stringPercent.split("\\.");
+
+        return parsedPercent.append(num[0])
+                .append(",")
+                .append(num[1])
+                .toString();
     }
 
     private String parsePrice(int price) {

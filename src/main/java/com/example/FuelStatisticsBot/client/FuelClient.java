@@ -34,8 +34,7 @@ public class FuelClient {
     public Map<LocalDate, List<Fuel>> getFuelPriceData(LocalDate start, LocalDate end) {
         Map<LocalDate, List<Fuel>> fuelDatePriceMap = new LinkedHashMap<>();
 
-
-        while (!start.isAfter(end)) {
+        while (start.getMonth().getValue() <= end.getMonth().getValue() || start.getYear() < end.getYear()) {
             try {
                 Document document = Jsoup.connect(getUrlWithDate(start)).get();
                 Elements rows = Objects.requireNonNull(document.selectFirst("table")).select("tr");

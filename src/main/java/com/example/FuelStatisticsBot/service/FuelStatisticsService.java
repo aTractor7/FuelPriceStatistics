@@ -35,7 +35,6 @@ public class FuelStatisticsService {
             fuelsPercents.add(getGrowthStatisticsInPercent(fuelDateMap, type));
         }
 
-
         try {
             return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
         } catch (FileNotFoundException e) {
@@ -54,7 +53,7 @@ public class FuelStatisticsService {
 
         for (Fuel fuel : fuelList) {
             double percent = lastPrice / fuel.getPrice() * 100 - 100;
-            percent = Math.ceil(percent * 100) / 100;
+            percent = Math.round(percent * 100) / 100.0;
             result.add(percent);
         }
         return result;

@@ -17,8 +17,6 @@ import java.util.*;
 @Component
 public class UpdateReceiver {
 
-    private final List<User> userList = new ArrayList<>();
-
     private final UserService userService;
 
     private final List<Handler> handlerList;
