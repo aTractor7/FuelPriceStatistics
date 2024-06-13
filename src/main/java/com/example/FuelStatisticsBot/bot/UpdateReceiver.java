@@ -80,8 +80,10 @@ public class UpdateReceiver {
 
 
     private void setStateByMessage(User user, Message message) throws UnsupportedOperationException{
-        if(messageToStateMap.containsKey(message.getText()))
-            user.setState(messageToStateMap.get(message.getText()));
+        String command = message.getText().split(" ")[0];
+
+        if(messageToStateMap.containsKey(command))
+            user.setState(messageToStateMap.get(command));
         else
             throw new UnsupportedOperationException();
     }

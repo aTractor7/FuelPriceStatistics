@@ -5,5 +5,5 @@ public enum State {
     ENTER_DATE,
     FUEL_STATISTICS_INIT,
     NONE,
-    HELP
+    SEND_FILE, HELP
 }

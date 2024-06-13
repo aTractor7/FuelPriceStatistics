@@ -11,7 +11,9 @@ import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.example.FuelStatisticsBot.util.TelegramUtil.createMessageTemplate;
 
@@ -27,13 +29,32 @@ public class FuelStatisticsInitHandler implements Handler {
 
     @Override
     public List<PartialBotApiMethod<? extends Serializable>> handle(User user, String message) {
-        SendMessage enterFirstDateMessage = createMessageTemplate(user);
-        enterFirstDateMessage.setText("Введіть першу дату в такому форматі: \"дд.мм.рррр\"");
+        List<String> params = Arrays.stream(message.split(" "))
+                .filter(s -> s.startsWith("-"))
+                .toList();
 
-        user.setState(State.ENTER_DATE);
+        SendMessage responseMessage;
+
+        if(params.contains("-f")) {
+            updateState(user, State.SEND_FILE);
+            responseMessage = createMessage(user, "Відправте файл з датами у форматі .docx");
+        } else {
+            updateState(user, State.ENTER_DATE);
+            responseMessage = createMessage(user, "Введіть першу дату в такому форматі: \"дд.мм.рррр\"");
+        }
+
+        return List.of(responseMessage);
+    }
+
+    private void updateState(User user, State newState) {
+        user.setState(newState);
         userService.update(user.getChatId(), user);
+    }
 
-        return List.of(enterFirstDateMessage);
+    private SendMessage createMessage(User user, String text) {
+        SendMessage sendMassage = createMessageTemplate(user);
+        sendMassage.setText(text);
+        return sendMassage;
     }
 
     @Override
