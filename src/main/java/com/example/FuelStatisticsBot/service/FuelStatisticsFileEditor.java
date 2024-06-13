@@ -148,7 +148,7 @@ public class FuelStatisticsFileEditor {
         String result;
 
         switch (fuelType) {
-            case A95_PLUS -> result = "Бензин А-95 (покращенної якості)";
+            case A95_PLUS -> result = "Бензин А-95 (покращеної якості)";
             case A95 -> result = "Бензин А-95";
             case A92 -> result = "Бензин А-92";
             case DT_PLUS -> result = "Дизельне паливо (покращенної якості)";
