@@ -14,6 +14,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Document;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
@@ -48,7 +49,11 @@ public class ImportDateFromDocxHandler implements DocumentHandler {
             SendMessage exceptionMessage = createMessageTemplate(user);
             exceptionMessage.setText("Не правильний формат файлу. Використовуйте .docx");
             return List.of(exceptionMessage);
-        }finally {
+        } catch (IOException e) {
+            SendMessage exceptionMessage = createMessageTemplate(user);
+            exceptionMessage.setText("Упс. У нас виникла проблема( Спробуйте пізніше.");
+            return List.of(exceptionMessage);
+        } finally {
             user.setState(State.NONE);
             userService.update(user.getChatId(), user);
         }

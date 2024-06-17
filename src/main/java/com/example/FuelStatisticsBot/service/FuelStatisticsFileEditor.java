@@ -37,7 +37,7 @@ public class FuelStatisticsFileEditor {
     }
 
     public File getFuelStatisticsFile(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
-                                      List<List<Double>> percentsList) {
+                                      List<List<Double>> percentsList) throws IOException {
         File fuelFile = new File(filePass);
 
         try(FileOutputStream output = new FileOutputStream(fuelFile)) {
@@ -52,8 +52,6 @@ public class FuelStatisticsFileEditor {
 
             document.write(output);
             document.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
         return fuelFile;
     }

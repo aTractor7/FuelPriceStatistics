@@ -21,6 +21,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -67,19 +68,24 @@ public class FuelStatisticsHandler implements TextHandler {
 
         if(statisticsData.getStartDate() == null || statisticsData.getEndDate() == null) return Collections.emptyList();
 
-        File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(
-                statisticsData.getStartDate(), statisticsData.getEndDate(),
-                List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
+        try {
+            File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(
+                    statisticsData.getStartDate(), statisticsData.getEndDate(),
+                    List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
 
-        SendDocument fuelStatisticsDocument = createDocumentTemplate(user);
-        fuelStatisticsDocument.setDocument(new InputFile(fuelStatisticsFile));
+            SendDocument fuelStatisticsDocument = createDocumentTemplate(user);
+            fuelStatisticsDocument.setDocument(new InputFile(fuelStatisticsFile));
 
-
-        user.getStatisticsData().clear();
-        user.setState(State.NONE);
-        userService.update(user.getChatId(), user);
-
-        return List.of(fuelStatisticsDocument);
+            return List.of(fuelStatisticsDocument);
+        } catch (IOException e) {
+            SendMessage exceptionMessage = createMessageTemplate(user);
+            exceptionMessage.setText("Упс. У нас виникла проблема( Спробуйте пізніше.");
+            return List.of(exceptionMessage);
+        } finally {
+            user.getStatisticsData().clear();
+            user.setState(State.NONE);
+            userService.update(user.getChatId(), user);
+        }
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> canselDates(User user) {

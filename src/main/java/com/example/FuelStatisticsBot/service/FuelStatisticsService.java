@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -18,13 +19,13 @@ public class FuelStatisticsService {
     private final FuelClient fuelClient;
     private final FuelStatisticsFileEditor fileEditor;
     @Autowired
-    public FuelStatisticsService(FuelClient fuelClient, FuelStatisticsFileEditor fileEditor, UserRepository userRepository) {
+    public FuelStatisticsService(FuelClient fuelClient, FuelStatisticsFileEditor fileEditor) {
         this.fuelClient = fuelClient;
         this.fileEditor = fileEditor;
     }
 
 
-    public File getStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) {
+    public File getStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) throws IOException {
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(start, end);
 
         trimDate(start, end, fuelDateMap);

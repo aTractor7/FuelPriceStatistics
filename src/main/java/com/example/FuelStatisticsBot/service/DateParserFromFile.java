@@ -24,7 +24,7 @@ public class DateParserFromFile {
         this.dateTimeFormatter = dateTimeFormatter;
     }
 
-    public List<LocalDate> getDatesFromFile(File file) {
+    public List<LocalDate> getDatesFromFile(File file) throws IOException {
         try(FileInputStream input = new FileInputStream(file)) {
             XWPFDocument document = new XWPFDocument(input);
 
@@ -33,9 +33,8 @@ public class DateParserFromFile {
             List<LocalDate> dates = new ArrayList<>(getDatesFromTable(table));
             dates.sort(LocalDate::compareTo);
 
+            document.close();
             return dates;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
