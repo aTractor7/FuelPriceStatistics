@@ -7,6 +7,10 @@ spring.datasource.username=
 spring.datasource.password=
 
 fuel.inf.url = https://index.minfin.com.ua/markets/fuel/%s/
-fuel.file.pass = src/main/resources/file/FuelStatistics.docx
+fuel.file.pass =
+fuel.dates.file.pass =
+
+telegram.file.url.inf =
+telegram.file.url.download =
 
 date.format = dd.MM.yyyy

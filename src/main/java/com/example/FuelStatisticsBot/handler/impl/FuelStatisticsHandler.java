@@ -1,6 +1,7 @@
 package com.example.FuelStatisticsBot.handler.impl;
 
 import com.example.FuelStatisticsBot.handler.Handler;
+import com.example.FuelStatisticsBot.handler.TextHandler;
 import com.example.FuelStatisticsBot.model.FuelType;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.StatisticsData;
@@ -15,6 +16,7 @@ import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
@@ -29,7 +31,7 @@ import static com.example.FuelStatisticsBot.util.DatesValidator.validateDates;
 import static com.example.FuelStatisticsBot.util.TelegramUtil.*;
 
 @Component
-public class FuelStatisticsHandler implements Handler {
+public class FuelStatisticsHandler implements TextHandler {
 
     private static final String ACCEPT_DATES = "/accept_dates";
     private static final String CANSEL_DATES = "/cancel_dates";

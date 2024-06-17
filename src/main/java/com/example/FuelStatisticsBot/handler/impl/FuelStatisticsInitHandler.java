@@ -2,6 +2,7 @@ package com.example.FuelStatisticsBot.handler.impl;
 
 
 import com.example.FuelStatisticsBot.handler.Handler;
+import com.example.FuelStatisticsBot.handler.TextHandler;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.User;
 import com.example.FuelStatisticsBot.service.UserService;
@@ -9,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.w3c.dom.Text;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -18,7 +21,7 @@ import java.util.stream.Collectors;
 import static com.example.FuelStatisticsBot.util.TelegramUtil.createMessageTemplate;
 
 @Component
-public class FuelStatisticsInitHandler implements Handler {
+public class FuelStatisticsInitHandler implements TextHandler {
 
     private final UserService userService;
 

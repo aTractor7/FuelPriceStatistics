@@ -37,7 +37,7 @@ public class FuelStatisticsFileEditor {
     }
 
     public File getFuelStatisticsFile(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
-                                      List<List<Double>> percentsList) throws FileNotFoundException {
+                                      List<List<Double>> percentsList) {
         File fuelFile = new File(filePass);
 
         try(FileOutputStream output = new FileOutputStream(fuelFile)) {

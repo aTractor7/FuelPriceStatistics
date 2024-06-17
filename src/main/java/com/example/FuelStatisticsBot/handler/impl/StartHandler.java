@@ -1,6 +1,7 @@
 package com.example.FuelStatisticsBot.handler.impl;
 
 import com.example.FuelStatisticsBot.handler.Handler;
+import com.example.FuelStatisticsBot.handler.TextHandler;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.User;
 import com.example.FuelStatisticsBot.service.UserService;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -19,7 +21,7 @@ import static com.example.FuelStatisticsBot.util.TelegramUtil.createMessageTempl
 
 @Component
 @PropertySource("application.properties")
-public class StartHandler implements Handler {
+public class StartHandler implements TextHandler {
 
     @Value("${bot.name}")
     private String botName;

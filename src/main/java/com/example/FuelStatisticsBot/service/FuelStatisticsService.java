@@ -35,11 +35,7 @@ public class FuelStatisticsService {
             fuelsPercents.add(getGrowthStatisticsInPercent(fuelDateMap, type));
         }
 
-        try {
-            return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
     }
 
     private List<Double> getGrowthStatisticsInPercent(Map<LocalDate, List<Fuel>> fuelDateMap, FuelType fuelType) {

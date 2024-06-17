@@ -1,6 +1,8 @@
 package com.example.FuelStatisticsBot.bot;
 
+import com.example.FuelStatisticsBot.handler.DocumentHandler;
 import com.example.FuelStatisticsBot.handler.Handler;
+import com.example.FuelStatisticsBot.handler.TextHandler;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.User;
 import com.example.FuelStatisticsBot.service.UserService;
@@ -32,35 +34,56 @@ public class UpdateReceiver {
 
 
     public List<PartialBotApiMethod<? extends Serializable>> handle(Update update) {
-        try{
-            if(isMassageWithText(update)) {
-                final Message message = update.getMessage();
-                final long chatId = message.getChatId();
-                final String name = message.getFrom().getFirstName();
-
-                final User user = userService.findOne(chatId)
-                        .orElseGet(() -> userService.save(new User(chatId, name, State.START)));
-
-                if(user.getState().equals(State.NONE)) setStateByMessage(user, message);
-
-                return getHandlerByState(user.getState()).handle(user, message.getText());
+        try {
+            if (isMassageWithText(update)) {
+                return handleMessageWithText(update);
+            } else if (isMessageWithFile(update)) {
+                return handleMessageWithFile(update);
             } else if (update.hasCallbackQuery()) {
-                final CallbackQuery callbackQuery = update.getCallbackQuery();
-                final long chatId = callbackQuery.getFrom().getId();
-                final String name = callbackQuery.getFrom().getUserName();
-
-                final User user = userService.findOne(chatId)
-                        .orElseGet(() -> userService.save(new User(chatId, name)));
-
-                return getHandlerByCallBackQuery(callbackQuery.getData()).handle(user, callbackQuery.getData());
+                return handleCallbackQuery(update);
             }
 
-            throw new UnsupportedOperationException();
-        }catch (UnsupportedOperationException e){
-            //TODO add log
+            throw new UnsupportedOperationException("Unsupported update type");
+        } catch (UnsupportedOperationException e) {
+            // TODO: add log
             return Collections.emptyList();
         }
     }
+
+    private List<PartialBotApiMethod<? extends Serializable>> handleMessageWithText(Update update) {
+        final Message message = update.getMessage();
+        final User user = getUser(message);
+
+        if (user.getState().equals(State.NONE)) setStateByMessage(user, message);
+
+        TextHandler handler = (TextHandler) getHandlerByState(user.getState());
+        return handler.handle(user, message.getText());
+    }
+
+    private List<PartialBotApiMethod<? extends Serializable>> handleMessageWithFile(Update update) {
+        final Message message = update.getMessage();
+        final User user = getUser(message);
+
+        DocumentHandler handler = (DocumentHandler) getHandlerByState(user.getState());
+        return handler.handle(user, message.getDocument());
+    }
+
+    private List<PartialBotApiMethod<? extends Serializable>> handleCallbackQuery(Update update) {
+        final CallbackQuery callbackQuery = update.getCallbackQuery();
+        final User user = getUser(callbackQuery.getMessage());
+
+        TextHandler handler = (TextHandler) getHandlerByCallBackQuery(callbackQuery.getData());
+        return handler.handle(user, callbackQuery.getData());
+    }
+
+    private User getUser(Message message) {
+        final long chatId = message.getChatId();
+        final String name = message.getFrom().getFirstName();
+
+        return userService.findOne(chatId)
+                .orElseGet(() -> userService.save(new User(chatId, name, State.START)));
+    }
+
 
     private Handler getHandlerByState(State state) throws UnsupportedOperationException{
         return handlerList.stream()
@@ -92,5 +115,7 @@ public class UpdateReceiver {
         return !update.hasCallbackQuery() && update.hasMessage() && update.getMessage().hasText();
     }
 
-
+    private boolean isMessageWithFile(Update update) {
+        return !update.hasCallbackQuery() && update.hasMessage() && update.getMessage().hasDocument();
+    }
 }
