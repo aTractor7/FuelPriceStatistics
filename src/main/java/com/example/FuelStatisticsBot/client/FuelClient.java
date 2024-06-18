@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @PropertySource("application.properties")
@@ -31,6 +32,18 @@ public class FuelClient {
         this.dateTimeFormatter = dateTimeFormatter;
     }
 
+    public Map<LocalDate, List<Fuel>> getFuelPriceData(List<LocalDate> dates) {
+        LocalDate start = dates.get(0);
+        LocalDate end = dates.get(dates.size() - 1);
+
+        Map<LocalDate, List<Fuel>> fuelDatePriceMap = getFuelPriceData(start, end);
+
+        return fuelDatePriceMap.entrySet().stream()
+                .filter(entry -> dates.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+    }
+
     public Map<LocalDate, List<Fuel>> getFuelPriceData(LocalDate start, LocalDate end) {
         Map<LocalDate, List<Fuel>> fuelDatePriceMap = new LinkedHashMap<>();
 
@@ -44,6 +57,7 @@ public class FuelClient {
                 throw new ClientException("Exception due to connecting to url using getMethod: " + url, e);
             }
         }
+
         return fuelDatePriceMap;
     }
 
@@ -107,15 +121,9 @@ public class FuelClient {
         dateBuilder.append(date.getYear()).append("-");
 
         int months = date.getMonth().getValue();
-        if(months < 10) dateBuilder.append("0");
+        if (months < 10) dateBuilder.append("0");
 
         String dateStr = dateBuilder.append(months).toString();
         return String.format(url, dateStr);
     }
 }
-
-
-
-
-
-

@@ -52,12 +52,19 @@ public class DateParserFromFile {
     }
 
     private Set<LocalDate> getDatesFromCell(XWPFTableCell cell) {
+        int dateLength = 10;
         String text = cell.getText();
-        String[] units = text.split(" ");
 
-        return Arrays.stream(units)
-                .filter(u -> u.matches(DATE_REGEX))
-                .map(s -> LocalDate.parse(s, dateTimeFormatter))
-                .collect(Collectors.toSet());
+        Set<LocalDate> dates = new HashSet<>();
+
+        for(int i = 0; i < text.length() - dateLength; i++) {
+            String dateCandidate = text.substring(i, i + dateLength);
+            if(dateCandidate.matches(DATE_REGEX)) {
+                i += dateLength - 1;
+                dates.add(LocalDate.parse(dateCandidate, dateTimeFormatter));
+            }
+        }
+
+        return dates;
     }
 }

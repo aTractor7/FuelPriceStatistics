@@ -24,19 +24,32 @@ public class FuelStatisticsService {
         this.fileEditor = fileEditor;
     }
 
+    public File getStatisticsInDocsFile(List<LocalDate> dates, List<FuelType> requiredFuel) throws IOException {
+        Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(dates);
+
+        List<List<Double>> fuelsPercents = getFuelPercents(fuelDateMap, requiredFuel);
+
+        return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
+    }
 
     public File getStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) throws IOException {
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(start, end);
 
         trimDate(start, end, fuelDateMap);
 
+        List<List<Double>> fuelsPercents = getFuelPercents(fuelDateMap, requiredFuel);
+
+        return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
+    }
+
+    private List<List<Double>> getFuelPercents(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel) {
         List<List<Double>> fuelsPercents = new ArrayList<>();
 
         for (FuelType type: requiredFuel) {
             fuelsPercents.add(getGrowthStatisticsInPercent(fuelDateMap, type));
         }
 
-        return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
+        return fuelsPercents;
     }
 
     private List<Double> getGrowthStatisticsInPercent(Map<LocalDate, List<Fuel>> fuelDateMap, FuelType fuelType) {
@@ -57,6 +70,6 @@ public class FuelStatisticsService {
     }
 
     private void trimDate(LocalDate start, LocalDate end, Map<LocalDate, List<Fuel>> fuelDateMap) {
-        fuelDateMap.entrySet().removeIf(e -> start.isAfter(e.getKey())||end.isBefore(e.getKey()));
+        fuelDateMap.entrySet().removeIf(e -> start.isAfter(e.getKey()) || end.isBefore(e.getKey()));
     }
 }
