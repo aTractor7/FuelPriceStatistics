@@ -87,7 +87,8 @@ public class FuelStatisticsHandler implements TextHandler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> canselDates(User user) {
-        user.getStatisticsData().clear();
+        if(user.getStatisticsData() != null)
+            user.getStatisticsData().clear();
 
         SendMessage canselMessage = createMessageTemplate(user);
         canselMessage.setText("Введені вами дати були стерті\nЩоб ввести заново використовуйте /get\\_statistics");
@@ -99,7 +100,6 @@ public class FuelStatisticsHandler implements TextHandler {
     }
 
     private List<PartialBotApiMethod<? extends Serializable>> checkDate(User user, String message) {
-
         SendMessage sendMessage = createMessageTemplate(user);
 
         StatisticsData statisticsData = user.getStatisticsData();

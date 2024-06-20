@@ -15,6 +15,7 @@ import org.w3c.dom.Text;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,6 +68,6 @@ public class FuelStatisticsInitHandler implements TextHandler {
 
     @Override
     public List<String> operatedCallBackQuery() {
-        return null;
+        return Collections.emptyList();
     }
 }

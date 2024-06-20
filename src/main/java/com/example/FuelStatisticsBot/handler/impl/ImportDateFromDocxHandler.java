@@ -92,6 +92,6 @@ public class ImportDateFromDocxHandler implements DocumentHandler {
 
     @Override
     public List<String> operatedCallBackQuery() {
-        return null;
+        return Collections.emptyList();
     }
 }

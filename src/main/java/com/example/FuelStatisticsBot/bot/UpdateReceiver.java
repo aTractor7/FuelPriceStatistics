@@ -94,6 +94,7 @@ public class UpdateReceiver {
     }
 
     private Handler getHandlerByCallBackQuery(String queryData) throws UnsupportedOperationException{
+
         return handlerList.stream()
                 .filter(h -> h.operatedCallBackQuery().stream()
                         .anyMatch(queryData::startsWith))
