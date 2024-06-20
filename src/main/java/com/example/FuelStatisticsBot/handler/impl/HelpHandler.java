@@ -25,6 +25,7 @@ public class HelpHandler implements TextHandler {
     private final static String HELP_MESSAGE = """
             Для отримання файлу з статистикою використовуйте команду:
             /get\\_statistics
+            ключ -f дозволяє імпортувати дати з .docx файлу
 
             Для переліку команд використовуйте:
             /help
