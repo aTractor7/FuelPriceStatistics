@@ -144,22 +144,6 @@ public class FuelStatisticsHandler implements TextHandler {
         return List.of(sendMessage);
     }
 
-
-    private InlineKeyboardMarkup createOneRowSizeKeyboardMarkup(List<Pair<String, String>> buttonList) {
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
-        List<InlineKeyboardButton> rowI = new ArrayList<>();
-
-
-        for (Pair<String, String> pair : buttonList) {
-            rowI.add(createInlineKeyBoardButton(pair.getKey(), pair.getValue()));
-        }
-        rows.add(rowI);
-
-        inlineKeyboardMarkup.setKeyboard(rows);
-        return inlineKeyboardMarkup;
-    }
-
     private LocalDate parseStringToDateAndValidate(String text) {
         try{
             LocalDate date = LocalDate.parse(text, dateTimeFormatter);

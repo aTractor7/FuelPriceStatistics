@@ -2,6 +2,7 @@ package com.example.FuelStatisticsBot.handler.impl;
 
 import com.example.FuelStatisticsBot.client.TelegramFileLoader;
 import com.example.FuelStatisticsBot.handler.DocumentHandler;
+import com.example.FuelStatisticsBot.handler.TextHandler;
 import com.example.FuelStatisticsBot.model.FuelType;
 import com.example.FuelStatisticsBot.model.State;
 import com.example.FuelStatisticsBot.model.User;
@@ -9,6 +10,7 @@ import com.example.FuelStatisticsBot.service.DateParserFromFile;
 import com.example.FuelStatisticsBot.service.FuelStatisticsService;
 import com.example.FuelStatisticsBot.service.UserService;
 import com.example.FuelStatisticsBot.util.exception.WrongFileExtensionException;
+import org.apache.commons.math3.util.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
@@ -24,24 +26,36 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 
-import static com.example.FuelStatisticsBot.util.TelegramUtil.createDocumentTemplate;
-import static com.example.FuelStatisticsBot.util.TelegramUtil.createMessageTemplate;
+import static com.example.FuelStatisticsBot.util.TelegramUtil.*;
 
 @Component
-public class ImportDateFromDocxHandler implements DocumentHandler {
+public class ImportDateFromDocxHandler implements DocumentHandler, TextHandler {
 
     private final UserService userService;
     private final TelegramFileLoader fileLoader;
     private final DateParserFromFile dateParserFromFile;
     private final FuelStatisticsService fuelStatisticsService;
     private static final String FILE_EXTENSION = ".docx";
+    private static final String CANSEL_FILE_LOAD = "/cancel_file_load";
 
     @Autowired
-    public ImportDateFromDocxHandler(UserService userService, TelegramFileLoader fileLoader, DateParserFromFile dateParserFromFile, FuelStatisticsService fuelStatisticsService) {
+    public ImportDateFromDocxHandler(UserService userService, TelegramFileLoader fileLoader,
+                                     DateParserFromFile dateParserFromFile, FuelStatisticsService fuelStatisticsService) {
         this.userService = userService;
         this.fileLoader = fileLoader;
         this.dateParserFromFile = dateParserFromFile;
         this.fuelStatisticsService = fuelStatisticsService;
+    }
+
+    @Override
+    public List<PartialBotApiMethod<? extends Serializable>> handle(User user, String message) {
+        SendMessage canselMessage = createMessageTemplate(user);
+        canselMessage.setText("Завантаження файлу відмінено");
+
+        user.setState(State.NONE);
+        userService.update(user.getChatId(), user);
+
+        return List.of(canselMessage);
     }
 
     @Override
@@ -64,6 +78,9 @@ public class ImportDateFromDocxHandler implements DocumentHandler {
         }catch (WrongFileExtensionException e) {
             SendMessage exceptionMessage = createMessageTemplate(user);
             exceptionMessage.setText("Не правильний формат файлу. Використовуйте .docx");
+            exceptionMessage.setReplyMarkup(
+                    createOneRowSizeKeyboardMarkup(List.of(
+                            new Pair<>("Відмінити", CANSEL_FILE_LOAD))));
             return List.of(exceptionMessage);
         } catch (IOException e) {
             SendMessage exceptionMessage = createMessageTemplate(user);
@@ -74,9 +91,6 @@ public class ImportDateFromDocxHandler implements DocumentHandler {
             userService.update(user.getChatId(), user);
         }
     }
-
-
-
 
     private void checkFileExtension(String fileName) {
         String extension = fileName.substring(fileName.length() - 5);
@@ -92,6 +106,6 @@ public class ImportDateFromDocxHandler implements DocumentHandler {
 
     @Override
     public List<String> operatedCallBackQuery() {
-        return Collections.emptyList();
+        return List.of(CANSEL_FILE_LOAD);
     }
 }

@@ -1,9 +1,14 @@
 package com.example.FuelStatisticsBot.util;
 
 import com.example.FuelStatisticsBot.model.User;
+import org.apache.commons.math3.util.Pair;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TelegramUtil {
 
@@ -34,5 +39,20 @@ public class TelegramUtil {
         inlineKeyboardButton.setText(text);
         inlineKeyboardButton.setCallbackData(command);
         return inlineKeyboardButton;
+    }
+
+    public static InlineKeyboardMarkup createOneRowSizeKeyboardMarkup(List<Pair<String, String>> buttonList) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> rowI = new ArrayList<>();
+
+
+        for (Pair<String, String> pair : buttonList) {
+            rowI.add(createInlineKeyBoardButton(pair.getKey(), pair.getValue()));
+        }
+        rows.add(rowI);
+
+        inlineKeyboardMarkup.setKeyboard(rows);
+        return inlineKeyboardMarkup;
     }
 }
