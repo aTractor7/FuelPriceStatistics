@@ -53,6 +53,7 @@ public class FuelStatisticsService {
     }
 
     private List<Double> getGrowthStatisticsInPercent(Map<LocalDate, List<Fuel>> fuelDateMap, FuelType fuelType) {
+        //TODO: check fuelDateMap on emptiness
         List<Fuel> fuelList = fuelDateMap.keySet().stream()
                 .map(fuelDateMap::get)
                 .flatMap(Collection::stream)

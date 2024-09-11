@@ -46,8 +46,10 @@ public class FuelClient {
 
     public Map<LocalDate, List<Fuel>> getFuelPriceData(LocalDate start, LocalDate end) {
         Map<LocalDate, List<Fuel>> fuelDatePriceMap = new LinkedHashMap<>();
+        setDayOfMonth(start, end);
 
-        while (start.getMonth().getValue() <= end.getMonth().getValue() || start.getYear() < end.getYear()) {
+
+        while (start.isBefore(end)) {
             try {
                 Document document = Jsoup.connect(getUrlWithDate(start)).get();
                 Elements rows = Objects.requireNonNull(document.selectFirst("table")).select("tr");
@@ -59,6 +61,22 @@ public class FuelClient {
         }
 
         return fuelDatePriceMap;
+    }
+
+    private void setDayOfMonth(LocalDate start, LocalDate end) {
+        start.withDayOfMonth(1);
+        end.withDayOfMonth(2);
+    }
+
+    private String getUrlWithDate(LocalDate date) {
+        StringBuilder dateBuilder = new StringBuilder();
+        dateBuilder.append(date.getYear()).append("-");
+
+        int months = date.getMonth().getValue();
+        if (months < 10) dateBuilder.append("0");
+
+        String dateStr = dateBuilder.append(months).toString();
+        return String.format(url, dateStr);
     }
 
     private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(Elements rows) throws ClientException{
@@ -114,16 +132,5 @@ public class FuelClient {
                     new ClientException("Exception with fuelType determination. FuelType index: " + index);
         }
         return fuelType;
-    }
-
-    private String getUrlWithDate(LocalDate date) {
-        StringBuilder dateBuilder = new StringBuilder();
-        dateBuilder.append(date.getYear()).append("-");
-
-        int months = date.getMonth().getValue();
-        if (months < 10) dateBuilder.append("0");
-
-        String dateStr = dateBuilder.append(months).toString();
-        return String.format(url, dateStr);
     }
 }

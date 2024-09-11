@@ -5,6 +5,8 @@ target/
 !**/src/test/**/target/
 src/main/resources/application.properties
 src/main/resources/file/
+env.txt
+env_db.txt
 
 ### STS ###
 .apt_generated
