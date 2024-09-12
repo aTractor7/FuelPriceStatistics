@@ -1,11 +1,15 @@
 version: "3"
 
+volumes:
+  fuel_stats_volume:
+
 services:
   fuel_stats_db:
     container_name: fuel_stats_db
     image: mysql
     volumes:
-      - /var/lib/docker/volumes/fuel_stats_volume/_data
+      - ./initdb:/docker-entrypoint-initdb.d
+      - fuel_stats_volume:/var/lib/mysql
     ports:
       - "3307:3306"
     env_file:
