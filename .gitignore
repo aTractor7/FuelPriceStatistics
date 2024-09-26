@@ -4,8 +4,11 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 src/main/resources/file/*
+src/main/resources/application-dev.properties
 env.txt
 env_db.txt
+env_compose.txt
+env_db_compose.txt
 
 ### STS ###
 .apt_generated

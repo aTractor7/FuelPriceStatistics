@@ -13,7 +13,7 @@ services:
     ports:
       - "3307:3306"
     env_file:
-      - env_db.txt
+      - env_db_compose.txt
 
   fuel_stats_app:
     build: .
@@ -25,4 +25,4 @@ services:
     ports:
        - "8081:8080"
     env_file:
-      - env.txt
+      - env_compose.txt

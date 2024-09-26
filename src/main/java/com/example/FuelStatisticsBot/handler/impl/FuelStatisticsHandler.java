@@ -77,7 +77,7 @@ public class FuelStatisticsHandler implements TextHandler {
             return List.of(fuelStatisticsDocument);
         } catch (IOException e) {
             SendMessage exceptionMessage = createMessageTemplate(user);
-            exceptionMessage.setText("Упс. У нас виникла проблема( Спробуйте пізніше.");
+            exceptionMessage.setText("Упс. У нас виникла проблема( Спробуйте пізніше." + e.getMessage());
             return List.of(exceptionMessage);
         } finally {
             user.getStatisticsData().clear();
