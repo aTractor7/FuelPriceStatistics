@@ -91,3 +91,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
         }
     }
 }
+
+
+
+

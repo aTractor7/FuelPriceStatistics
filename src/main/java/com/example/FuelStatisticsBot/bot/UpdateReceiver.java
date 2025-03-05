@@ -45,7 +45,6 @@ public class UpdateReceiver {
 
             throw new UnsupportedOperationException("Unsupported update type");
         } catch (UnsupportedOperationException e) {
-            // TODO: add log
             return Collections.emptyList();
         }
     }

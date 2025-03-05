@@ -46,26 +46,23 @@ public class FuelClient {
 
     public Map<LocalDate, List<Fuel>> getFuelPriceData(LocalDate start, LocalDate end) {
         Map<LocalDate, List<Fuel>> fuelDatePriceMap = new LinkedHashMap<>();
-        setDayOfMonth(start, end);
 
-
-        while (start.isBefore(end)) {
-            try {
-                Document document = Jsoup.connect(getUrlWithDate(start)).get();
-                Elements rows = Objects.requireNonNull(document.selectFirst("table")).select("tr");
-                fuelDatePriceMap.putAll(getFuelPriceDataPerMonths(rows));
-                start = start.plusMonths(1);
-            } catch (IOException e) {
-                throw new ClientException("Exception due to connecting to url using getMethod: " + url, e);
-            }
+        while (start.isBefore(end) || start.getMonth() == end.getMonth()) {
+            fuelDatePriceMap.putAll(getFuelPriceDataPerMonths(start));
+            start = start.plusMonths(1);
         }
 
         return fuelDatePriceMap;
     }
 
-    private void setDayOfMonth(LocalDate start, LocalDate end) {
-        start.withDayOfMonth(1);
-        end.withDayOfMonth(2);
+    private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(LocalDate start) {
+        try {
+            Document document = Jsoup.connect(getUrlWithDate(start)).get();
+            Elements rows = Objects.requireNonNull(document.selectFirst("table")).select("tr");
+            return getFuelPriceMapPerMonths(rows);
+        } catch (IOException e) {
+            throw new ClientException("Exception due to connecting to url using getMethod: " + url, e);
+        }
     }
 
     private String getUrlWithDate(LocalDate date) {
@@ -79,7 +76,7 @@ public class FuelClient {
         return String.format(url, dateStr);
     }
 
-    private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(Elements rows) throws ClientException{
+    private Map<LocalDate, List<Fuel>> getFuelPriceMapPerMonths(Elements rows) throws ClientException{
         Map<LocalDate, List<Fuel>> dateFuelMap = new LinkedHashMap<>();
         for(int i = 1; i < rows.size(); i ++) {
             Elements cells = rows.get(i).select("td");
