@@ -53,12 +53,11 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         List<PartialBotApiMethod<? extends Serializable>> messageToSend = updateReceiver.handle(update);
 
-        if(messageToSend != null && !messageToSend.isEmpty()) {
+        if (messageToSend != null && !messageToSend.isEmpty()) {
             messageToSend.forEach(response -> {
-                if(response instanceof SendMessage) {
+                if (response instanceof SendMessage) {
                     executeWithExceptionCheck((SendMessage) response);
-                }
-                else if(response instanceof SendDocument) {
+                } else if (response instanceof SendDocument) {
                     executeFileWithExceptionCheck((SendDocument) response);
                 }
             });
@@ -68,7 +67,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
     private void executeWithExceptionCheck(SendMessage sendMessage) {
         try {
             execute(sendMessage);
-        }catch (TelegramApiException e) {
+        } catch (TelegramApiException e) {
             throw new RuntimeException("Message execute error");
         }
     }
@@ -76,7 +75,7 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
     private void executeFileWithExceptionCheck(SendDocument sendDocument) {
         try {
             execute(sendDocument);
-        }catch (TelegramApiException e) {
+        } catch (TelegramApiException e) {
             throw new RuntimeException("File execute error");
         }
     }
@@ -91,7 +90,3 @@ public class FuelStatisticsTelegramBot extends TelegramLongPollingBot {
         }
     }
 }
-
-
-
-

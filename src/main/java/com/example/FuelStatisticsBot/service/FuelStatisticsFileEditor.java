@@ -36,9 +36,9 @@ public class FuelStatisticsFileEditor {
         this.dateTimeFormatter = formatter;
     }
 
-    public File getFuelStatisticsFile(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
+    public File getFuelStatisticsFile(long id, Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
                                       List<List<Double>> percentsList) throws IOException {
-        File fuelFile = new File(filePass);
+        File fuelFile = new File(String.format(filePass, id));
 
         try(FileOutputStream output = new FileOutputStream(fuelFile)) {
             XWPFDocument document = new XWPFDocument();

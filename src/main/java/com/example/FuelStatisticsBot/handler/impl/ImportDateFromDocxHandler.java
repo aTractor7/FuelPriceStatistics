@@ -68,7 +68,7 @@ public class ImportDateFromDocxHandler implements DocumentHandler, TextHandler {
             File file = fileLoader.loadFile(document.getFileId());
             List<LocalDate> dates = dateParserFromFile.getDatesFromFile(file);
 
-            File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(dates,
+            File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(user.getChatId(), dates,
                     List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
 
             SendDocument fuelStatisticsDocument = createDocumentTemplate(user);

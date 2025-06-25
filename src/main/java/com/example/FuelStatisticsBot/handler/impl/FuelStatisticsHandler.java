@@ -67,7 +67,7 @@ public class FuelStatisticsHandler implements TextHandler {
         if(statisticsData.getStartDate() == null || statisticsData.getEndDate() == null) return Collections.emptyList();
 
         try {
-            File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(
+            File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(user.getChatId(),
                     statisticsData.getStartDate(), statisticsData.getEndDate(),
                     List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
 

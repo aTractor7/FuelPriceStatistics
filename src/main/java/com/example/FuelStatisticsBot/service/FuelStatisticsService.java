@@ -24,22 +24,24 @@ public class FuelStatisticsService {
         this.fileEditor = fileEditor;
     }
 
-    public File getStatisticsInDocsFile(List<LocalDate> dates, List<FuelType> requiredFuel) throws IOException {
+    public File getStatisticsInDocsFile(long id, List<LocalDate> dates, List<FuelType> requiredFuel) throws IOException {
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(dates);
 
         List<List<Double>> fuelsPercents = getFuelPercents(fuelDateMap, requiredFuel);
 
-        return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
+        return fileEditor.getFuelStatisticsFile(id, fuelDateMap, requiredFuel, fuelsPercents);
     }
 
-    public File getStatisticsInDocsFile(LocalDate start, LocalDate end, List<FuelType> requiredFuel) throws IOException {
+    public File getStatisticsInDocsFile(long id, LocalDate start, LocalDate end,
+                                        List<FuelType> requiredFuel) throws IOException {
+
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(start, end);
 
         trimDate(start, end, fuelDateMap);
 
         List<List<Double>> fuelsPercents = getFuelPercents(fuelDateMap, requiredFuel);
 
-        return fileEditor.getFuelStatisticsFile(fuelDateMap, requiredFuel, fuelsPercents);
+        return fileEditor.getFuelStatisticsFile(id, fuelDateMap, requiredFuel, fuelsPercents);
     }
 
     private List<List<Double>> getFuelPercents(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel) {

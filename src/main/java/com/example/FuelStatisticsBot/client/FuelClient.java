@@ -5,7 +5,6 @@ import com.example.FuelStatisticsBot.model.FuelType;
 import com.example.FuelStatisticsBot.util.exception.ClientException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +15,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Component
@@ -45,20 +47,32 @@ public class FuelClient {
     }
 
     public Map<LocalDate, List<Fuel>> getFuelPriceData(LocalDate start, LocalDate end) {
-        Map<LocalDate, List<Fuel>> fuelDatePriceMap = new LinkedHashMap<>();
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        List<CompletableFuture<Map<LocalDate, List<Fuel>>>> futures = new ArrayList<>();
 
         while (start.isBefore(end) || start.getMonth() == end.getMonth()) {
-            fuelDatePriceMap.putAll(getFuelPriceDataPerMonths(start));
+            LocalDate immutableStart = start;
+            futures.add(CompletableFuture.supplyAsync(
+                    () -> getFuelPriceDataPerMonths(immutableStart), executor));
             start = start.plusMonths(1);
         }
 
-        return fuelDatePriceMap;
+        Map<LocalDate, List<Fuel>> result = futures.stream()
+                .map(CompletableFuture::join)
+                .flatMap(m -> m.entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+        executor.shutdown();
+        return result;
     }
 
-    private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(LocalDate start) {
+    private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(LocalDate date) {
         try {
-            Document document = Jsoup.connect(getUrlWithDate(start)).get();
+            Document document = Jsoup.connect(getUrlWithDate(date)).get();
             Elements rows = Objects.requireNonNull(document.selectFirst("table")).select("tr");
+
             return getFuelPriceMapPerMonths(rows);
         } catch (IOException e) {
             throw new ClientException("Exception due to connecting to url using getMethod: " + url, e);
@@ -81,25 +95,18 @@ public class FuelClient {
         for(int i = 1; i < rows.size(); i ++) {
             Elements cells = rows.get(i).select("td");
 
-            LocalDate date = null;
-            List<Fuel> fuelList = new ArrayList<>();
+            if (cells.isEmpty() || cells.get(0).text().isEmpty()) continue;
 
-            for (int j = 0; j < cells.size(); j ++) {
-                Element cell = cells.get(j);
+            LocalDate date = parseDate(cells.get(0).text());
+            List<Fuel> fuelList = dateFuelMap.computeIfAbsent(date, k -> new ArrayList<>());
 
-                if(cell.text().isEmpty()) continue;
+            for (int j = 1; j < cells.size(); j++) {
+                String priceText = cells.get(j).text();
+                if (priceText.isEmpty()) continue;
 
-                if(j == 0) {
-                    date = parseDate(cell.text());
-                }else {
-                    FuelType fuelType = determineFuelType(j);
-
-                    String price = cell.text();
-                    Fuel fuel = new Fuel(fuelType, parsePrice(price));
-                    fuelList.add(fuel);
-                }
+                FuelType fuelType = determineFuelType(j);
+                fuelList.add(new Fuel(fuelType, parsePrice(priceText)));
             }
-            dateFuelMap.put(date, fuelList);
         }
         return dateFuelMap;
     }

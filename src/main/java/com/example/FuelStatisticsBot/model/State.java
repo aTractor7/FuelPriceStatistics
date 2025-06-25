@@ -6,5 +6,6 @@ public enum State {
     FUEL_STATISTICS_INIT,
     NONE,
     SEND_FILE,
-    HELP
+    HELP,
+    WRONG_UPDATE_TYPE
 }
