@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static com.example.FuelStatisticsBot.util.TelegramUtil.*;
 
@@ -66,10 +67,9 @@ public class ImportDateFromDocxHandler implements DocumentHandler, TextHandler {
             checkFileExtension(document.getFileName());
 
             File file = fileLoader.loadFile(document.getFileId());
-            List<LocalDate> dates = dateParserFromFile.getDatesFromFile(file);
+            Map<FuelType, List<LocalDate>> dates = dateParserFromFile.getDatesForFuelTypes(file);
 
-            File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(user.getChatId(), dates,
-                    List.of(FuelType.A95_PLUS, FuelType.A95, FuelType.A92, FuelType.DT, FuelType.GAS));
+            File fuelStatisticsFile = fuelStatisticsService.getStatisticsInDocsFile(user.getChatId(), dates);
 
             SendDocument fuelStatisticsDocument = createDocumentTemplate(user);
             fuelStatisticsDocument.setDocument(new InputFile(fuelStatisticsFile));

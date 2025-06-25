@@ -18,21 +18,22 @@ public class FuelStatisticsService {
 
     private final FuelClient fuelClient;
     private final FuelStatisticsFileEditor fileEditor;
+
     @Autowired
     public FuelStatisticsService(FuelClient fuelClient, FuelStatisticsFileEditor fileEditor) {
         this.fuelClient = fuelClient;
         this.fileEditor = fileEditor;
     }
 
-    public File getStatisticsInDocsFile(long id, List<LocalDate> dates, List<FuelType> requiredFuel) throws IOException {
-        Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(dates);
+    public File getStatisticsInDocsFile(long chatId, Map<FuelType, List<LocalDate>> datesForFuelType) throws IOException {
+        Map<LocalDate, List<Fuel>> fuelDatePriceMap = fuelClient.getFuelPriceData(datesForFuelType);
 
-        List<List<Double>> fuelsPercents = getFuelPercents(fuelDateMap, requiredFuel);
+        List<List<Double>> fuelsPercents = getFuelPercents(fuelDatePriceMap, datesForFuelType.keySet());
 
-        return fileEditor.getFuelStatisticsFile(id, fuelDateMap, requiredFuel, fuelsPercents);
+        return fileEditor.getFuelStatisticsFile(chatId, fuelDatePriceMap, datesForFuelType.keySet(), fuelsPercents);
     }
 
-    public File getStatisticsInDocsFile(long id, LocalDate start, LocalDate end,
+    public File getStatisticsInDocsFile(long chatId, LocalDate start, LocalDate end,
                                         List<FuelType> requiredFuel) throws IOException {
 
         Map<LocalDate, List<Fuel>> fuelDateMap = fuelClient.getFuelPriceData(start, end);
@@ -41,14 +42,14 @@ public class FuelStatisticsService {
 
         List<List<Double>> fuelsPercents = getFuelPercents(fuelDateMap, requiredFuel);
 
-        return fileEditor.getFuelStatisticsFile(id, fuelDateMap, requiredFuel, fuelsPercents);
+        return fileEditor.getFuelStatisticsFile(chatId, fuelDateMap, requiredFuel, fuelsPercents);
     }
 
-    private List<List<Double>> getFuelPercents(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel) {
+    private List<List<Double>> getFuelPercents(Map<LocalDate, List<Fuel>> fuelDatePriceMap, Collection<FuelType> requiredFuel) {
         List<List<Double>> fuelsPercents = new ArrayList<>();
 
         for (FuelType type: requiredFuel) {
-            fuelsPercents.add(getGrowthStatisticsInPercent(fuelDateMap, type));
+            fuelsPercents.add(getGrowthStatisticsInPercent(fuelDatePriceMap, type));
         }
 
         return fuelsPercents;
@@ -60,10 +61,14 @@ public class FuelStatisticsService {
                 .flatMap(Collection::stream)
                 .filter(f -> f.getFuelType() == fuelType).toList();
 
+        if(fuelList.isEmpty()) return Collections.emptyList();
+
         double lastPrice = fuelList.get(fuelList.size() - 1).getPrice();
         List<Double> result = new ArrayList<>();
 
         for (Fuel fuel : fuelList) {
+            if (fuelList.indexOf(fuel) == fuelList.size() - 1) break;
+
             double percent = lastPrice / fuel.getPrice() * 100 - 100;
             percent = Math.round(percent * 100) / 100.0;
             result.add(percent);

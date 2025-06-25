@@ -1,8 +1,10 @@
 package com.example.FuelStatisticsBot.service;
 
+import com.example.FuelStatisticsBot.model.FuelType;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class DateParserFromFile {
@@ -23,44 +26,65 @@ public class DateParserFromFile {
         this.dateTimeFormatter = dateTimeFormatter;
     }
 
-    public List<LocalDate> getDatesFromFile(File file) throws IOException {
-        try(FileInputStream input = new FileInputStream(file)) {
+    public Map<FuelType, List<LocalDate>> getDatesForFuelTypes(File file) throws IOException {
+        try (FileInputStream input = new FileInputStream(file)) {
             XWPFDocument document = new XWPFDocument(input);
 
             XWPFTable table = document.getTables().get(0);
 
-            List<LocalDate> dates = new ArrayList<>(getDatesFromTable(table));
-            dates.sort(LocalDate::compareTo);
+            Map<FuelType, List<LocalDate>> fuelTypeDates = getDatesFromTable(table);
 
             document.close();
-            return dates;
+            return fuelTypeDates.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey(Comparator.comparingInt(Enum::ordinal)))
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue,
+                            (a, b) -> a,
+                            LinkedHashMap::new
+                    ));
         }
     }
 
-    private Set<LocalDate> getDatesFromTable(XWPFTable table) {
-        Set<LocalDate> dates = new HashSet<>();
+    private Map<FuelType, List<LocalDate>> getDatesFromTable(XWPFTable table) {
+        Map<FuelType, List<LocalDate>> fuelTypeDates = new HashMap<>();
 
-        int rows = table.getNumberOfRows();
+        for(XWPFTableRow row: table.getRows()){
+            if(row == null || row.getTableCells() == null || row.getTableCells().isEmpty()) continue;
 
-        for(int i = 1; i < rows; i++) {
-            XWPFTableCell cell = table.getRows().get(i).getCell(1);
-            dates.addAll(getDatesFromCell(cell));
+            String fuelType = row.getCell(0).getText();
+            if(fuelType == null || fuelType.isBlank() ||
+                    !Arrays.stream(FuelType.values()).map(Enum::toString).toList().contains(fuelType))
+                continue;
+
+            FuelType fuelTypeEnum = FuelType.valueOf(fuelType);
+
+            List<LocalDate> dates = getDatesFromCell(row.getCell(1));
+            dates.sort(LocalDate::compareTo);
+
+
+            fuelTypeDates.put(fuelTypeEnum, dates);
         }
 
-        return dates;
+        return fuelTypeDates;
     }
 
-    private Set<LocalDate> getDatesFromCell(XWPFTableCell cell) {
+    private List<LocalDate> getDatesFromCell(XWPFTableCell cell) {
         int dateLength = 10;
         String text = cell.getText();
 
-        Set<LocalDate> dates = new HashSet<>();
+        List<LocalDate> dates = new ArrayList<>();
 
         for(int i = 0; i < text.length() - dateLength; i++) {
             String dateCandidate = text.substring(i, i + dateLength);
             if(dateCandidate.matches(DATE_REGEX)) {
                 i += dateLength - 1;
-                dates.add(LocalDate.parse(dateCandidate, dateTimeFormatter));
+
+                LocalDate date = LocalDate.parse(dateCandidate, dateTimeFormatter);
+
+                if(dates.contains(date)) continue;
+
+                dates.add(date);
             }
         }
 

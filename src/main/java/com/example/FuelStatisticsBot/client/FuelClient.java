@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 @Component
@@ -34,27 +35,66 @@ public class FuelClient {
         this.dateTimeFormatter = dateTimeFormatter;
     }
 
-    public Map<LocalDate, List<Fuel>> getFuelPriceData(List<LocalDate> dates) {
-        LocalDate start = dates.get(0);
-        LocalDate end = dates.get(dates.size() - 1);
+    public Map<LocalDate, List<Fuel>> getFuelPriceData(Map<FuelType, List<LocalDate>> fuelDateMap) {
+        Map<LocalDate, List<Fuel>> fuelDatePriceMap;
 
-        Map<LocalDate, List<Fuel>> fuelDatePriceMap = getFuelPriceData(start, end);
+        LocalDate[] startEndDates = getStartEndDates(fuelDateMap);;
 
-        return fuelDatePriceMap.entrySet().stream()
-                .filter(entry -> dates.contains(entry.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+        fuelDatePriceMap = getFuelPriceDataInternal(startEndDates[0], startEndDates[1],
+                (cells, fuelList) -> {
+                    for (FuelType fuelType : fuelDateMap.keySet()) {
+                        if(cells.get(fuelType.ordinal() + 1) != null && !cells.get(fuelType.ordinal() + 1).text().isBlank()) {
+                            String priceText = cells.get(fuelType.ordinal() + 1).text();
+                            fuelList.add(new Fuel(fuelType, parsePrice(priceText)));
+                        }
+                    }
+                });
+
+        return removeUnnecessaryDates(fuelDateMap, fuelDatePriceMap);
     }
 
     public Map<LocalDate, List<Fuel>> getFuelPriceData(LocalDate start, LocalDate end) {
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        return getFuelPriceDataInternal(start, end, (cells, fuelList) -> {
+            for (int j = 1; j < cells.size(); j++) {
+                if (cells.get(j) == null || cells.get(j).text().isEmpty()) continue;
+                String priceText = cells.get(j).text();
 
+                FuelType fuelType = determineFuelType(j);
+                fuelList.add(new Fuel(fuelType, parsePrice(priceText)));
+            }
+        });
+    }
+
+    private LocalDate[] getStartEndDates(Map<FuelType, List<LocalDate>> fuelDateMap) {
+        LocalDate start = null;
+        LocalDate end = null;
+        for(FuelType key : fuelDateMap.keySet()) {
+            List<LocalDate> dates = fuelDateMap.get(key);
+            if(dates == null || dates.isEmpty()) continue;
+
+            if(start == null && end == null) {
+                start = dates.get(0);
+                end = dates.get(dates.size() - 1);
+            }
+            if(dates.get(0).isBefore(start)) {
+                start = dates.get(0);
+            }
+            if(dates.get(dates.size() - 1).isAfter(end)) {
+                end = dates.get(dates.size() - 1);
+            }
+        }
+
+        return new LocalDate[]{start, end};
+    }
+
+    private Map<LocalDate, List<Fuel>> getFuelPriceDataInternal(LocalDate start, LocalDate end, BiConsumer<Elements, List<Fuel>> fuelProcessor) {
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         List<CompletableFuture<Map<LocalDate, List<Fuel>>>> futures = new ArrayList<>();
 
         while (start.isBefore(end) || start.getMonth() == end.getMonth()) {
             LocalDate immutableStart = start;
             futures.add(CompletableFuture.supplyAsync(
-                    () -> getFuelPriceDataPerMonths(immutableStart), executor));
+                    () -> getFuelPriceDataPerMonths(immutableStart, fuelProcessor), executor));
             start = start.plusMonths(1);
         }
 
@@ -68,12 +108,41 @@ public class FuelClient {
         return result;
     }
 
-    private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(LocalDate date) {
+    private Map<LocalDate, List<Fuel>> removeUnnecessaryDates(Map<FuelType, List<LocalDate>> fuelDateMap,
+                                                              Map<LocalDate, List<Fuel>> fuelDatePriceMap) {
+        removeUnusedDates(fuelDateMap, fuelDatePriceMap);
+
+        for (FuelType fuelType : fuelDateMap.keySet()) {
+            List<LocalDate> requiredDates = fuelDateMap.get(fuelType);
+
+            for (LocalDate key : fuelDatePriceMap.keySet()) {
+                if(requiredDates.contains(key)) continue;
+
+                fuelDatePriceMap.get(key).removeIf(fuel -> fuel.getFuelType() == fuelType);
+            }
+        }
+        return fuelDatePriceMap;
+    }
+
+    private void removeUnusedDates(Map<FuelType, List<LocalDate>> fuelDateMap,
+                               Map<LocalDate, List<Fuel>> fuelDatePriceMap) {
+        Set<LocalDate> allDates = fuelDateMap.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
+
+        Set<LocalDate> toRemove = fuelDatePriceMap.keySet().stream()
+                .filter(date -> !allDates.contains(date))
+                .collect(Collectors.toSet());
+
+        toRemove.forEach(fuelDatePriceMap::remove);
+    }
+
+    private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(LocalDate date, BiConsumer<Elements, List<Fuel>> fuelProcessor) {
         try {
             Document document = Jsoup.connect(getUrlWithDate(date)).get();
             Elements rows = Objects.requireNonNull(document.selectFirst("table")).select("tr");
 
-            return getFuelPriceMapPerMonths(rows);
+            return buildFuelPriceMap(rows, fuelProcessor);
         } catch (IOException e) {
             throw new ClientException("Exception due to connecting to url using getMethod: " + url, e);
         }
@@ -90,23 +159,16 @@ public class FuelClient {
         return String.format(url, dateStr);
     }
 
-    private Map<LocalDate, List<Fuel>> getFuelPriceMapPerMonths(Elements rows) throws ClientException{
+    private Map<LocalDate, List<Fuel>> buildFuelPriceMap(Elements rows, BiConsumer<Elements, List<Fuel>> fuelProcessor) throws ClientException {
         Map<LocalDate, List<Fuel>> dateFuelMap = new LinkedHashMap<>();
-        for(int i = 1; i < rows.size(); i ++) {
+        for (int i = 1; i < rows.size(); i++) {
             Elements cells = rows.get(i).select("td");
-
             if (cells.isEmpty() || cells.get(0).text().isEmpty()) continue;
 
             LocalDate date = parseDate(cells.get(0).text());
             List<Fuel> fuelList = dateFuelMap.computeIfAbsent(date, k -> new ArrayList<>());
 
-            for (int j = 1; j < cells.size(); j++) {
-                String priceText = cells.get(j).text();
-                if (priceText.isEmpty()) continue;
-
-                FuelType fuelType = determineFuelType(j);
-                fuelList.add(new Fuel(fuelType, parsePrice(priceText)));
-            }
+            fuelProcessor.accept(cells, fuelList);
         }
         return dateFuelMap;
     }

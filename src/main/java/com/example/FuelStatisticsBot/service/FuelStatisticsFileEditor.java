@@ -14,10 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 @Component
@@ -36,9 +33,9 @@ public class FuelStatisticsFileEditor {
         this.dateTimeFormatter = formatter;
     }
 
-    public File getFuelStatisticsFile(long id, Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
+    public File getFuelStatisticsFile(long chatId, Map<LocalDate, List<Fuel>> fuelDateMap, Collection<FuelType> requiredFuel,
                                       List<List<Double>> percentsList) throws IOException {
-        File fuelFile = new File(String.format(filePass, id));
+        File fuelFile = new File(String.format(filePass, chatId));
 
         try(FileOutputStream output = new FileOutputStream(fuelFile)) {
             XWPFDocument document = new XWPFDocument();
@@ -48,7 +45,7 @@ public class FuelStatisticsFileEditor {
             List<XWPFTable> tables = document.getTables();
 
             createDatePriceTable(fuelDateMap, requiredFuel, tables.get(0));
-            createPriceGrowTable(percentsList, fuelDateMap.keySet(), requiredFuel, tables.get(1));
+            createPriceGrowTable(percentsList, fuelDateMap, requiredFuel, tables.get(1));
 
             document.write(output);
             document.close();
@@ -58,9 +55,9 @@ public class FuelStatisticsFileEditor {
 
 
     private void createDocumentStructure(XWPFDocument document, Map<LocalDate, List<Fuel>> fuelDateMap,
-                                                    List<FuelType> requiredFuel) {
+                                                    Collection<FuelType> requiredFuel) {
         document.createTable(
-                fuelDateMap.keySet().size() + 1,
+                fuelDateMap.size() + 1,
                 requiredFuel.size() + 1);
 
         addNewLine(document);
@@ -68,7 +65,7 @@ public class FuelStatisticsFileEditor {
         document.createTable(requiredFuel.size() + 1, 2);
     }
 
-    private void createDatePriceTable(Map<LocalDate, List<Fuel>> fuelDateMap, List<FuelType> requiredFuel,
+    private void createDatePriceTable(Map<LocalDate, List<Fuel>> fuelDateMap, Collection<FuelType> requiredFuel,
                                       XWPFTable table) {
         Iterator<XWPFTableRow> rowIterator = table.getRows().iterator();
 
@@ -80,25 +77,38 @@ public class FuelStatisticsFileEditor {
 
             cellIterator.next().setText(key.format(dateTimeFormatter));
 
-            for(Fuel fuel: fuelDateMap.get(key)) {
-                if(requiredFuel.contains(fuel.getFuelType())) {
-                    String price = parsePrice(fuel.getPrice());
-                    cellIterator.next().setText(price);
+            List<Fuel> fuels = new ArrayList<>(fuelDateMap.get(key));
+
+            if (fuels.size() < requiredFuel.size()) {
+                requiredFuel.stream()
+                        .filter(fuelType -> fuels.stream()
+                                .noneMatch(fuel -> fuel.getFuelType() == fuelType))
+                        .forEach(fuelType -> fuels.add(new Fuel(fuelType, -1)));
+            }
+
+            fuels.sort(Comparator.comparingInt(f -> f.getFuelType().ordinal()));
+
+            for(Fuel fuel: fuels) {
+                if(fuel.getPrice() == -1){
+                    cellIterator.next().setText("-");
+                    continue;
                 }
+                String price = parsePrice(fuel.getPrice());
+                cellIterator.next().setText(price);
             }
         }
     }
 
-    private void setDatePriceTableHead(List<XWPFTableCell> cells, List<FuelType> requiredFuel) {
+    private void setDatePriceTableHead(List<XWPFTableCell> cells, Collection<FuelType> requiredFuel) {
         Iterator<XWPFTableCell> cellIterator = cells.iterator();
         cellIterator.next().setText("Дата");
         for(FuelType fuelType: requiredFuel) {
-            cellIterator.next().setText(parseFuelType(fuelType) + ", " + PRICE_MEASUREMENT);
+            cellIterator.next().setText(fuelType.getFullName() + ", " + PRICE_MEASUREMENT);
         }
     }
 
-    private void createPriceGrowTable(List<List<Double>> percentsList, Set<LocalDate> dateSet,
-                                      List<FuelType> requiredFuel, XWPFTable table) {
+    private void createPriceGrowTable(List<List<Double>> percentsList, Map<LocalDate, List<Fuel>> fuelDateMap,
+                                      Collection<FuelType> requiredFuel, XWPFTable table) {
         Iterator<XWPFTableRow> rowIterator = table.getRows().iterator();
 
         setPriceGrowTableHead(rowIterator.next().getTableCells());
@@ -106,11 +116,17 @@ public class FuelStatisticsFileEditor {
         Iterator<List<Double>> percentsIterator = percentsList.iterator();
 
         for(FuelType fuelType: requiredFuel) {
+            List<LocalDate> dates = fuelDateMap.entrySet().stream()
+                    .filter(entry -> entry.getValue().stream()
+                            .anyMatch(fuel -> fuel.getFuelType().equals(fuelType)))
+                    .map(Map.Entry::getKey)
+                    .toList();
+
             XWPFTableRow row = rowIterator.next();
             Iterator<XWPFTableCell> cellIterator = row.getTableCells().iterator();
 
-            cellIterator.next().setText(parseFuelType(fuelType));
-            cellIterator.next().setText(parseStatistics(percentsIterator.next(), dateSet));
+            cellIterator.next().setText(fuelType.getFullName());
+            cellIterator.next().setText(parseStatistics(percentsIterator.next(), dates));
         }
     }
 
@@ -119,16 +135,18 @@ public class FuelStatisticsFileEditor {
         cells.get(1).setText("Відсоток збільшення роздрібних цін в період ");
     }
 
-
-
-    private String parseStatistics(List<Double> percents, Set<LocalDate> dateSet) {
+    private String parseStatistics(List<Double> percents, List<LocalDate> dates) {
         StringBuilder builder = new StringBuilder();
 
-        LocalDate lastElement = dateSet.stream().reduce((first, second) -> second).get();
+        if(dates.isEmpty()) return "";
+
+        LocalDate lastElement = dates.get(dates.size() - 1);
 
         Iterator<Double> percentsIterator = percents.iterator();
 
-        for(LocalDate date: dateSet) {
+        for(LocalDate date: dates) {
+            if(dates.indexOf(date) == dates.size() - 1) break;
+
             String percent = parsePercent(percentsIterator.next());
             builder
                     .append("з ")
@@ -142,36 +160,24 @@ public class FuelStatisticsFileEditor {
         return builder.toString();
     }
 
-    private String parseFuelType(FuelType fuelType) {
-        String result;
-
-        switch (fuelType) {
-            case A95_PLUS -> result = "Бензин А-95 (покращеної якості)";
-            case A95 -> result = "Бензин А-95";
-            case A92 -> result = "Бензин А-92";
-            case DT_PLUS -> result = "Дизельне паливо (покращенної якості)";
-            case DT -> result = "Дизельне паливо";
-            case GAS -> result = "Газ";
-            default -> throw new RuntimeException("No such fuel type");
-        }
-        return result;
-    }
-
     private String parsePercent(double percent) {
         String stringPercent = Double.toString(percent);
         StringBuilder parsedPercent = new StringBuilder();
 
         String[] num = stringPercent.split("\\.");
 
-        return parsedPercent.append(num[0])
+        parsedPercent.append(num[0])
                 .append(",")
-                .append(num[1])
-                .toString();
+                .append(num[1]);
+
+        if(num[1].length() < 2) parsedPercent.append("0");
+
+        return parsedPercent.toString();
     }
 
     private String parsePrice(int price) {
         StringBuilder builder = new StringBuilder(price + "");
-        builder.insert(2, ",");
+        builder.insert(builder.length() - 2, ",");
         return builder.toString();
     }
 
