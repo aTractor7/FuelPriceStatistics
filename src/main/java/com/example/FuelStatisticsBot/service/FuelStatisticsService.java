@@ -68,6 +68,10 @@ public class FuelStatisticsService {
 
         for (Fuel fuel : fuelList) {
             if (fuelList.indexOf(fuel) == fuelList.size() - 1) break;
+            if (fuel.getPrice() == -1) {
+                result.add(Double.NaN);
+                continue;
+            }
 
             double percent = lastPrice / fuel.getPrice() * 100 - 100;
             percent = Math.round(percent * 100) / 100.0;

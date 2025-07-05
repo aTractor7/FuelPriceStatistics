@@ -3,6 +3,7 @@ package com.example.FuelStatisticsBot.client;
 import com.example.FuelStatisticsBot.model.Fuel;
 import com.example.FuelStatisticsBot.model.FuelType;
 import com.example.FuelStatisticsBot.util.exception.ClientException;
+import org.apache.commons.collections4.map.LinkedMap;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -110,31 +111,70 @@ public class FuelClient {
 
     private Map<LocalDate, List<Fuel>> removeUnnecessaryDates(Map<FuelType, List<LocalDate>> fuelDateMap,
                                                               Map<LocalDate, List<Fuel>> fuelDatePriceMap) {
-        removeUnusedDates(fuelDateMap, fuelDatePriceMap);
+        addEmptyDates(fuelDateMap, fuelDatePriceMap);
+
+        TreeMap<LocalDate, List<Fuel>> sortedFuelDatePriceMap = new TreeMap<>(fuelDatePriceMap);
+        removeUnusedDates(fuelDateMap, sortedFuelDatePriceMap);
+
 
         for (FuelType fuelType : fuelDateMap.keySet()) {
             List<LocalDate> requiredDates = fuelDateMap.get(fuelType);
 
-            for (LocalDate key : fuelDatePriceMap.keySet()) {
-                if(requiredDates.contains(key)) continue;
+            for (LocalDate key : sortedFuelDatePriceMap.keySet()) {
+                LocalDate previousKey = sortedFuelDatePriceMap.lowerKey(key);
+                if(requiredDates.contains(key) || previousKey != null && sortedFuelDatePriceMap.get(previousKey).stream()
+                        .anyMatch(fuel -> fuel.getPrice() == -1 && fuel.getFuelType() == fuelType)) continue;
 
                 fuelDatePriceMap.get(key).removeIf(fuel -> fuel.getFuelType() == fuelType);
             }
         }
-        return fuelDatePriceMap;
+        return sortedFuelDatePriceMap;
     }
 
     private void removeUnusedDates(Map<FuelType, List<LocalDate>> fuelDateMap,
-                               Map<LocalDate, List<Fuel>> fuelDatePriceMap) {
+                                   TreeMap<LocalDate, List<Fuel>> fuelDatePriceMap) {
         Set<LocalDate> allDates = fuelDateMap.values().stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toSet());
 
-        Set<LocalDate> toRemove = fuelDatePriceMap.keySet().stream()
-                .filter(date -> !allDates.contains(date))
-                .collect(Collectors.toSet());
+        Set<LocalDate> toRemove = new HashSet<>();
+        for(LocalDate date : fuelDatePriceMap.keySet()) {
+            if(!allDates.contains(date)) {
+                LocalDate previousKey = fuelDatePriceMap.lowerKey(date);
+                if(previousKey != null && fuelDatePriceMap.get(previousKey).stream()
+                        .anyMatch(fuel -> fuel.getPrice() == -1)) {
+                        continue;
+                    }
+                toRemove.add(date);
+            }
+        }
 
         toRemove.forEach(fuelDatePriceMap::remove);
+    }
+
+    private void addEmptyDates(Map<FuelType, List<LocalDate>> fuelDateMap,
+                               Map<LocalDate, List<Fuel>> fuelDatePriceMap) {
+        Map<LocalDate, List<Fuel>> emptyDatesFuelDatePriceMap = new HashMap<>();
+
+        for(FuelType fuelType : fuelDateMap.keySet()) {
+            List<LocalDate> emptyDates = fuelDateMap.get(fuelType).stream()
+                    .filter(date -> !fuelDatePriceMap.containsKey(date))
+                    .toList();
+
+            for(LocalDate emptyDate: emptyDates) {
+                if(emptyDatesFuelDatePriceMap.containsKey(emptyDate)) {
+                    emptyDatesFuelDatePriceMap.get(emptyDate)
+                            .add(new Fuel(fuelType, -1));
+                }
+                else {
+                    ArrayList<Fuel> emptyFuels = new ArrayList<>();
+                    emptyFuels.add(new Fuel(fuelType, -1));
+
+                    emptyDatesFuelDatePriceMap.put(emptyDate, emptyFuels);
+                }
+            }
+        }
+        fuelDatePriceMap.putAll(emptyDatesFuelDatePriceMap);
     }
 
     private Map<LocalDate, List<Fuel>> getFuelPriceDataPerMonths(LocalDate date, BiConsumer<Elements, List<Fuel>> fuelProcessor) {

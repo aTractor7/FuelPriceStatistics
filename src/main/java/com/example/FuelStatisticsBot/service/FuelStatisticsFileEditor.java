@@ -75,7 +75,11 @@ public class FuelStatisticsFileEditor {
             XWPFTableRow row = rowIterator.next();
             Iterator<XWPFTableCell> cellIterator = row.getTableCells().iterator();
 
-            cellIterator.next().setText(key.format(dateTimeFormatter));
+            if(fuelDateMap.get(key).stream().anyMatch(fuel -> fuel.getPrice() == -1)) {
+                cellIterator.next().setText(key.format(dateTimeFormatter) + "*");
+            }else {
+                cellIterator.next().setText(key.format(dateTimeFormatter));
+            }
 
             List<Fuel> fuels = new ArrayList<>(fuelDateMap.get(key));
 
@@ -160,7 +164,9 @@ public class FuelStatisticsFileEditor {
         return builder.toString();
     }
 
-    private String parsePercent(double percent) {
+    private String parsePercent(Double percent) {
+        if(percent.isNaN()) return "----";
+
         String stringPercent = Double.toString(percent);
         StringBuilder parsedPercent = new StringBuilder();
 
