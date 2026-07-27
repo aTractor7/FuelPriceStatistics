@@ -60,7 +60,10 @@ public class FuelClient {
                 if (cells.get(j) == null || cells.get(j).text().isEmpty()) continue;
                 String priceText = cells.get(j).text();
 
-                FuelType fuelType = determineFuelType(j);
+                if(FuelType.values().length <= j - 1)
+                    throw new ClientException("Exception with fuelType determination. FuelType index: " + j);
+
+                FuelType fuelType = FuelType.values()[j - 1];
                 fuelList.add(new Fuel(fuelType, parsePrice(priceText)));
             }
         });
@@ -222,21 +225,5 @@ public class FuelClient {
     private LocalDate parseDate(String cellDate) {
         String stringDate = cellDate.substring(0, 10);
         return LocalDate.parse(stringDate, dateTimeFormatter);
-    }
-
-    private FuelType determineFuelType(int index) {
-        FuelType fuelType;
-
-        switch (index) {
-            case 1 -> fuelType = FuelType.A95_PLUS;
-            case 2 -> fuelType = FuelType.A95;
-            case 3 -> fuelType = FuelType.A92;
-            case 4 -> fuelType = FuelType.DT;
-            case 5 -> fuelType = FuelType.DT_PLUS;
-            case 6 -> fuelType = FuelType.GAS;
-            default -> throw
-                    new ClientException("Exception with fuelType determination. FuelType index: " + index);
-        }
-        return fuelType;
     }
 }

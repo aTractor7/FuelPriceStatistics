@@ -75,7 +75,7 @@ public class DateParserFromFile {
 
         List<LocalDate> dates = new ArrayList<>();
 
-        for(int i = 0; i < text.length() - dateLength; i++) {
+        for(int i = 0; i <= text.length() - dateLength; i++) {
             String dateCandidate = text.substring(i, i + dateLength);
             if(dateCandidate.matches(DATE_REGEX)) {
                 i += dateLength - 1;
