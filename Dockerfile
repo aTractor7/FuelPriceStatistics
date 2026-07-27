@@ -1,16 +1,16 @@
-FROM openjdk:17-jdk-slim AS build
+FROM eclipse-temurin:17-jdk AS build
+WORKDIR /app
 COPY pom.xml mvnw ./
 COPY .mvn .mvn
-RUN chmod +x mvnw
-RUN ./mvnw dependency:resolve
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src src
-RUN ./mvnw package -DskipTests
+RUN ./mvnw package -DskipTests -B
 
-FROM openjdk:17-jdk-slim
-COPY --from=build target/*.jar demo.jar
-
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar demo.jar
 RUN mkdir -p /app/files
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "demo.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "demo.jar"]
