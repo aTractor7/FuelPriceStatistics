@@ -40,7 +40,10 @@ public class FuelStatisticsFileEditor {
         try(FileOutputStream output = new FileOutputStream(fuelFile)) {
             XWPFDocument document = new XWPFDocument();
 
-            createDocumentStructure(document, fuelDateMap, requiredFuel);
+            createDatesList(document.createParagraph().createRun(), fuelDateMap.keySet());
+
+            createDocumentTableStructure(document, fuelDateMap, requiredFuel);
+
 
             List<XWPFTable> tables = document.getTables();
 
@@ -54,8 +57,10 @@ public class FuelStatisticsFileEditor {
     }
 
 
-    private void createDocumentStructure(XWPFDocument document, Map<LocalDate, List<Fuel>> fuelDateMap,
+    private void createDocumentTableStructure(XWPFDocument document, Map<LocalDate, List<Fuel>> fuelDateMap,
                                                     Collection<FuelType> requiredFuel) {
+        addNewLine(document);
+
         document.createTable(
                 fuelDateMap.size() + 1,
                 requiredFuel.size() + 1);
@@ -63,6 +68,13 @@ public class FuelStatisticsFileEditor {
         addNewLine(document);
 
         document.createTable(requiredFuel.size() + 1, 2);
+    }
+
+    private void createDatesList(XWPFRun run, Set<LocalDate> fuelDateSet) {
+        StringBuilder dates = new StringBuilder();
+        fuelDateSet.forEach(localDate -> {
+                dates.append(localDate.format(dateTimeFormatter)).append(", ");});
+        run.setText(dates.substring(0, dates.length() - 2));
     }
 
     private void createDatePriceTable(Map<LocalDate, List<Fuel>> fuelDateMap, Collection<FuelType> requiredFuel,
